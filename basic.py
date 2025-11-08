@@ -123,7 +123,7 @@ def ibp_activation(L: Vector, U: Vector, f: VecFunc) -> tuple[Vector, Vector]:
     return np.min(vals, axis=1), np.max(vals, axis=1)
 
 
-# ---------- Activation envelopes (generic & ready-made) ----------
+# ---------- Activation envelopes ----------
 def chords_for_function(f: VecFunc, segs: list[tuple[float, float]]) -> list[Line]:
     """
     Generates a list of line segments (chords) that connect points on
@@ -188,7 +188,7 @@ def envelope_from_lines(
     return np.array(A_list, dtype=np.float64), np.array(b_list, dtype=np.float64)
 
 
-# Prebuilt: ReLU and HardTanh envelopes on [L,U]
+# ReLU and HardTanh envelopes on [L,U]
 def relu_envelope(L: float, U: float) -> Envelope:
     """
     Builds the tightest convex (polyhedral) relaxation for ReLU on [L, U].
@@ -244,36 +244,6 @@ def hardtanh_envelope(
         lower += [(0.0, hi, x0, x1)]
         upper += [(0.0, hi, x0, x1)]
     return lower, upper
-
-
-def box_envelope_fixed(f: VecFunc, L: float, U: float) -> Envelope:
-    """
-    Box relaxation that ALSO maintains a ≤ z relation.
-    Without relating a and z, the polytope becomes disconnected.
-    """
-    Lz_vec, Uz_vec = ibp_activation(
-        np.array([L], dtype=np.float64), np.array([U], dtype=np.float64), f
-    )
-    Lz = Lz_vec[0]
-    Uz = Uz_vec[0]
-
-    # CRITICAL: We need to relate a and z somehow
-    # Simple approach: add loose bounds + assume monotonicity
-    lower_lines = [
-        (0.0, Lz, L, U),  # z >= Lz
-    ]
-    upper_lines = [
-        (0.0, Uz, L, U),  # z <= Uz
-    ]
-
-    # Add weak relational constraints if possible
-    # For GELU which is roughly monotonic, we can add:
-    # If a >= L, then z >= f(L) (approximately)
-    # If a <= U, then z <= f(U) (approximately)
-    # But this is what sampled_envelope does better...
-
-    return lower_lines, upper_lines
-
 
 # GELU (or arbitrary) outer envelope via sampled chords
 def sampled_envelope(
@@ -468,7 +438,7 @@ class PolyAnalyzer:
         z_sl = self._alloc(act_name, a_sl.stop - a_sl.start)
 
         L, U = bounds
-        # --- NEW: enforce a in [L, U] so the envelope is valid ---
+        # enforce a in [L, U] so the envelope is valid
         m_bounds = L.size
         A_bound = np.zeros((2 * m_bounds, self.nvars), dtype=np.float64)
         b_bound = np.zeros(2 * m_bounds, dtype=np.float64)
@@ -485,7 +455,6 @@ class PolyAnalyzer:
 
         self.constraints_A = np.vstack([self.constraints_A, A_bound])
         self.constraints_b = np.concatenate([self.constraints_b, b_bound])
-        # --- end NEW ---
 
         m_rows, b_rows = [], []
         for i, (Li, Ui) in enumerate(zip(L, U)):
@@ -575,7 +544,7 @@ def example_mlp_run() -> dict[str, Any]:
         """A builder for GELU using the generic sampled envelope."""
         return tight_gelu_envelope(Li, Ui)
 
-    # (Optional) A builder for ReLU, if you wanted to swap
+    # A builder for ReLU, if you wanted to swap
     def relu_builder(Li: float, Ui: float) -> Envelope:
         return relu_envelope(Li, Ui)
 
@@ -587,7 +556,8 @@ def example_mlp_run() -> dict[str, Any]:
     # --- !! IMPORTANT !! ---
     # Make sure you are using relu_builder for this test!
     # This proves the core analyzer works.
-    z1 = P.add_activation("a1", "z1", (L1, U1), relu_builder)
+    z1 = P.add_activation("a1", "z1",
+                          (L1, U1), gelu_builder)
 
     a2 = P.add_affine("z1", W2, b2, "a2")  # logits
 
@@ -612,43 +582,6 @@ def example_mlp_run() -> dict[str, Any]:
         res_hi0=res_hi0,
         res_margin=res_margin,
     )
-
-
-# ---------- Loading a trained FNN and analyzing it ----------
-# import torch
-# def load_mnist_fnn():
-#     """Load your trained FNN."""
-#     model = torch.load('path/to/your/fnn.pt')
-#     model.eval()
-#
-#     # Extract weights and biases
-#     layers = []
-#     for module in model.modules():
-#         if isinstance(module, torch.nn.Linear):
-#             W = module.weight.detach().numpy()
-#             b = module.bias.detach().numpy()
-#             layers.append(('affine', W, b))
-#         elif isinstance(module, torch.nn.GELU):
-#             layers.append(('gelu',))
-#
-#     return layers
-#
-# def analyze_network(layers, input_region):
-#     """Analyze a loaded network."""
-#     P = PolyAnalyzer()
-#     lb, ub = input_region
-#     z = P.add_input_box("z0", lb, ub)
-#
-#     for i, layer in enumerate(layers):
-#         if layer[0] == 'affine':
-#             _, W, b = layer
-#             a = P.add_affine(f"z{i}", W, b, f"a{i+1}")
-#             # Compute bounds for activation
-#             L, U = obt_affine(P, f"a{i+1}", np.eye(len(b)), np.zeros(len(b)))
-#         elif layer[0] == 'gelu':
-#             z = P.add_activation(f"a{i+1}", f"z{i+1}", (L, U), tight_gelu_envelope)
-#
-#     return P
 
 if __name__ == "__main__":
     out = example_mlp_run()

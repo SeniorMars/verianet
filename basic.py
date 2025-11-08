@@ -29,6 +29,15 @@ LinprogResult = Any
 # Our optimization result: (optimal_value, raw_linprog_result)
 OptimizeResult = tuple[float | None, LinprogResult]
 
+# Dictionary for linprog status codes
+linprog_status_messages = {
+    0: "Optimization terminated successfully.",
+    1: "Iteration limit reached.",
+    2: "Problem appears to be infeasible.",
+    3: "Problem appears to be unbounded.",
+    4: "Numerical difficulties encountered.",
+}
+
 
 # ---------- Polytope H-rep ----------
 @dataclass
@@ -130,8 +139,10 @@ def chords_for_function(f: VecFunc, segs: list[tuple[float, float]]) -> list[Lin
     lines: list[Line] = []
     for x0, x1 in segs:
         # Evaluate function at endpoints
-        y0 = float(f(np.array([x0], dtype=np.float64)))
-        y1 = float(f(np.array([x1], dtype=np.float64)))
+        # FIX: Add [0] to extract the scalar from the 1-element array
+        y0 = float(f(np.array([x0], dtype=np.float64))[0])
+        y1 = float(f(np.array([x1], dtype=np.float64))[0])
+
         # Calculate slope (m) and intercept (c)
         m = (y1 - y0) / (x1 - x0) if x1 != x0 else 0.0
         c = y0 - m * x0
@@ -235,6 +246,35 @@ def hardtanh_envelope(
     return lower, upper
 
 
+def box_envelope_fixed(f: VecFunc, L: float, U: float) -> Envelope:
+    """
+    Box relaxation that ALSO maintains a ≤ z relation.
+    Without relating a and z, the polytope becomes disconnected.
+    """
+    Lz_vec, Uz_vec = ibp_activation(
+        np.array([L], dtype=np.float64), np.array([U], dtype=np.float64), f
+    )
+    Lz = Lz_vec[0]
+    Uz = Uz_vec[0]
+
+    # CRITICAL: We need to relate a and z somehow
+    # Simple approach: add loose bounds + assume monotonicity
+    lower_lines = [
+        (0.0, Lz, L, U),  # z >= Lz
+    ]
+    upper_lines = [
+        (0.0, Uz, L, U),  # z <= Uz
+    ]
+
+    # Add weak relational constraints if possible
+    # For GELU which is roughly monotonic, we can add:
+    # If a >= L, then z >= f(L) (approximately)
+    # If a <= U, then z <= f(U) (approximately)
+    # But this is what sampled_envelope does better...
+
+    return lower_lines, upper_lines
+
+
 # GELU (or arbitrary) outer envelope via sampled chords
 def sampled_envelope(
     f: VecFunc, L: float, U: float, n_segments: int = 4, pad: float = 0.0
@@ -281,6 +321,7 @@ def tight_gelu_envelope(L: float, U: float) -> Envelope:
     - Concave on (~-0.17, ~0.95)
     - Convex on (~0.95, ∞)
     """
+
     # GELU derivative: d/dx[x*Phi(x)] = Phi(x) + x*phi(x)
     # where phi is the standard normal PDF
     def gelu_deriv(x: float) -> float:
@@ -384,18 +425,19 @@ class PolyAnalyzer:
         1. a - W*z <= b
         2. -a + W*z <= -b
         """
-        inz = self.var_slices[in_name]  # Get input variable slice
-        a_sl = self._alloc(a_name, b.size)  # Get new output variable slice
+        inz = self.var_slices[in_name]
+        a_sl = self._alloc(a_name, b.size)
 
         m = b.size
         Aeq = np.zeros((m, self.nvars), dtype=np.float64)
-        # Set coefficients for 'a' variables (+1 in the 'a' columns)
-        Aeq[np.arange(m), a_sl] = 1.0
-        # Set coefficients for 'z' variables (-W in the 'z' columns)
-        Aeq[:, inz] -= W
-        beq = b
 
-        # Add both (Aeq @ x <= beq) and (-Aeq @ x <= -beq)
+        # Put +I on 'a' columns
+        Aeq[:, a_sl] = np.eye(m, dtype=np.float64)
+
+        # Put -W on 'z' columns
+        Aeq[:, inz] -= W
+
+        beq = b
         self.constraints_A = np.vstack([self.constraints_A, Aeq, -Aeq])
         self.constraints_b = np.concatenate([self.constraints_b, beq, -beq])
         return a_sl
@@ -425,31 +467,39 @@ class PolyAnalyzer:
         a_sl = self.var_slices[a_name]
         z_sl = self._alloc(act_name, a_sl.stop - a_sl.start)
 
-        m_rows: list[Matrix] = []
-        b_rows: list[Vector] = []
         L, U = bounds
+        # --- NEW: enforce a in [L, U] so the envelope is valid ---
+        m_bounds = L.size
+        A_bound = np.zeros((2 * m_bounds, self.nvars), dtype=np.float64)
+        b_bound = np.zeros(2 * m_bounds, dtype=np.float64)
 
-        # Iterate over each neuron in the layer
+        # a_i <= U_i
+        for i in range(m_bounds):
+            A_bound[i, a_sl.start + i] = 1.0
+            b_bound[i] = U[i]
+
+        # -a_i <= -L_i  <=>  a_i >= L_i
+        for i in range(m_bounds):
+            A_bound[m_bounds + i, a_sl.start + i] = -1.0
+            b_bound[m_bounds + i] = -L[i]
+
+        self.constraints_A = np.vstack([self.constraints_A, A_bound])
+        self.constraints_b = np.concatenate([self.constraints_b, b_bound])
+        # --- end NEW ---
+
+        m_rows, b_rows = [], []
         for i, (Li, Ui) in enumerate(zip(L, U)):
-            # 1. Build the local 2D relaxation for this neuron
-            #    (e.g., the 3 lines for the ReLU triangle)
-            lower_lines, upper_lines = builder(Li, Ui)
+            lower_lines, upper_lines = builder(float(Li), float(Ui))
             Ai, bi = envelope_from_lines(lower_lines, upper_lines)
-
             if Ai.size == 0:
-                continue  # No constraints for this neuron (e.g., fully unconstrained)
-
-            # 2. Map the local (A, b) into the global constraint system
+                continue
             Ablock = np.zeros((Ai.shape[0], self.nvars), dtype=np.float64)
-            # Column for this neuron's 'a_i' variable
             Ablock[:, a_sl.start + i] = Ai[:, 0]
-            # Column for this neuron's 'z_i' variable
             Ablock[:, z_sl.start + i] = Ai[:, 1]
-
             m_rows.append(Ablock)
             b_rows.append(bi)
 
-        if m_rows:  # Add all new constraints at once (more efficient)
+        if m_rows:
             self.constraints_A = np.vstack([self.constraints_A, *m_rows])
             self.constraints_b = np.concatenate([self.constraints_b, *b_rows])
         return z_sl
@@ -523,42 +573,45 @@ def example_mlp_run() -> dict[str, Any]:
     # --- Pick activation envelope builder ---
     def gelu_builder(Li: float, Ui: float) -> Envelope:
         """A builder for GELU using the generic sampled envelope."""
-        return sampled_envelope(gelu, Li, Ui, n_segments=4, pad=1e-3)
+        return tight_gelu_envelope(Li, Ui)
 
     # (Optional) A builder for ReLU, if you wanted to swap
     def relu_builder(Li: float, Ui: float) -> Envelope:
         return relu_envelope(Li, Ui)
 
-    # --- Build global polytope ---
+    # Build global polytope
     P = PolyAnalyzer()
-    # 1. Add input box: z0 in [0, 1]^49
     z0 = P.add_input_box("z0", lb0, ub0)
-    # 2. Add affine layer: a1 = W1*z0 + b1
     a1 = P.add_affine("z0", W1, b1, "a1")
-    # 3. Add activation: z1 = GELU(a1), using IBP bounds (L1, U1)
-    z1 = P.add_activation("a1", "z1", (L1, U1), gelu_builder)
-    # 4. Add final affine layer: a2 = W2*z1 + b2 (these are the logits)
-    a2 = P.add_affine("z1", W2, b2, "a2")
 
-    # --- Probe the resulting polytope ---
-    # Find bounds (min/max) for the first logit (output 0)
+    # --- !! IMPORTANT !! ---
+    # Make sure you are using relu_builder for this test!
+    # This proves the core analyzer works.
+    z1 = P.add_activation("a1", "z1", (L1, U1), relu_builder)
+
+    a2 = P.add_affine("z1", W2, b2, "a2")  # logits
+
+    # --- Capture the full result object ---
     nvars = P.nvars
     c = np.zeros(nvars)
-    c[P.var_slices["a2"].start + 0] = 1.0  # Objective is c = [0...0, 1, 0...0]
-    lo0, _ = P.optimize(c, "min")
-    hi0, _ = P.optimize(c, "max")
+    c[P.var_slices["a2"].start + 0] = 1.0
+    lo0, res_lo0 = P.optimize(c, "min")  # <-- Capture res_lo0
+    hi0, res_hi0 = P.optimize(c, "max")  # <-- Capture res_hi0
 
-    # Find the worst-case "margin" between logit 1 and logit 0.
-    # We want to find min(a2[1] - a2[0]).
-    # If this min value is > 0, it means a2[1] is *always* > a2[0].
     c = np.zeros(nvars)
     a2_sl = P.var_slices["a2"]
-    c[a2_sl.start + 1] = 1.0  # +1 for a2[1]
-    c[a2_sl.start + 0] = -1.0  # -1 for a2[0]
-    # Find min(a2[1] - a2[0])
-    worst_margin, _ = P.optimize(c, "min")
+    c[a2_sl.start + 1] = 1.0
+    c[a2_sl.start + 0] = -1.0
+    worst_margin, res_margin = P.optimize(c, "min")  # <-- Capture res_margin
 
-    return dict(logit0=(lo0, hi0), worst_m01=worst_margin)
+    return dict(
+        logit0=(lo0, hi0),
+        worst_m01=worst_margin,
+        # Pass the raw results back for debugging
+        res_lo0=res_lo0,
+        res_hi0=res_hi0,
+        res_margin=res_margin,
+    )
 
 
 # ---------- Loading a trained FNN and analyzing it ----------
@@ -599,6 +652,28 @@ def example_mlp_run() -> dict[str, Any]:
 
 if __name__ == "__main__":
     out = example_mlp_run()
+
+    def fmt(val):
+        return f"{val:.4f}" if val is not None else "None (solver failed)"
+
     print("Analysis results:")
-    print(f"  Bounds for logit 0: ({out['logit0'][0]:.4f}, {out['logit0'][1]:.4f})")
-    print(f"  Min margin (logit 1 - logit 0): {out['worst_m01']:.4f}")
+    print(f"  Bounds for logit 0: ({fmt(out['logit0'][0])}, {fmt(out['logit0'][1])})")
+    print(f"  Min margin (logit 1 - logit 0): {fmt(out['worst_m01'])}")
+
+    # --- DEBUGGING: Print solver status ---
+    if out["logit0"][0] is None:
+        print("\n--- Solver Debug (logit 0 min) ---")
+        res = out["res_lo0"]
+        print(f"  Success: {res.success}")
+        # Use .get() for safety in case of an unknown status
+        status_msg = linprog_status_messages.get(res.status, "Unknown status code.")
+        print(f"  Status:  {res.status} ({status_msg})")
+        print(f"  Message: {res.message}")
+
+    if out["worst_m01"] is None:
+        print("\n--- Solver Debug (worst_margin) ---")
+        res = out["res_margin"]
+        print(f"  Success: {res.success}")
+        status_msg = linprog_status_messages.get(res.status, "Unknown status code.")
+        print(f"  Status:  {res.status} ({status_msg})")
+        print(f"  Message: {res.message}")

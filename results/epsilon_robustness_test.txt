@@ -1,0 +1,803 @@
+=== FULL-SCALE RUN: Epsilon vs Robustness with Confidence Intervals ===
+Confidence: 0.95, Max error: ±0.05
+Epsilons: [0.01, 0.02, 0.05, 0.1]
+Digits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Samples per config: 600
+Total verifications: 24000
+
+
+============================================================
+DIGIT 0
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (98.0% robust)
+  Progress: 100/600 (99.0% robust)
+  Progress: 150/600 (98.0% robust)
+  Progress: 200/600 (98.0% robust)
+  Progress: 250/600 (98.4% robust)
+  Progress: 300/600 (98.0% robust)
+  Progress: 350/600 (98.3% robust)
+  Progress: 400/600 (98.2% robust)
+  Progress: 450/600 (98.4% robust)
+  Progress: 500/600 (98.6% robust)
+  Progress: 550/600 (98.4% robust)
+  Progress: 600/600 (98.5% robust)
+
+  RESULT: 591/600 robust = 98.5%
+  95% CI: [93.5%, 100.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (98.0% robust)
+  Progress: 100/600 (99.0% robust)
+  Progress: 150/600 (98.7% robust)
+  Progress: 200/600 (98.5% robust)
+  Progress: 250/600 (98.4% robust)
+  Progress: 300/600 (98.0% robust)
+  Progress: 350/600 (98.0% robust)
+  Progress: 400/600 (98.0% robust)
+  Progress: 450/600 (98.2% robust)
+  Progress: 500/600 (98.0% robust)
+  Progress: 550/600 (97.5% robust)
+  Progress: 600/600 (97.5% robust)
+
+  RESULT: 585/600 robust = 97.5%
+  95% CI: [92.5%, 100.0%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (90.0% robust)
+  Progress: 100/600 (88.0% robust)
+  Progress: 150/600 (86.7% robust)
+  Progress: 200/600 (88.0% robust)
+  Progress: 250/600 (88.8% robust)
+  Progress: 300/600 (88.0% robust)
+  Progress: 350/600 (87.4% robust)
+  Progress: 400/600 (88.2% robust)
+  Progress: 450/600 (88.9% robust)
+  Progress: 500/600 (88.8% robust)
+  Progress: 550/600 (87.8% robust)
+  Progress: 600/600 (88.5% robust)
+
+  RESULT: 531/600 robust = 88.5%
+  95% CI: [83.5%, 93.5%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (52.0% robust)
+  Progress: 100/600 (57.0% robust)
+  Progress: 150/600 (56.7% robust)
+  Progress: 200/600 (59.5% robust)
+  Progress: 250/600 (62.0% robust)
+  Progress: 300/600 (59.7% robust)
+  Progress: 350/600 (60.3% robust)
+  Progress: 400/600 (61.3% robust)
+  Progress: 450/600 (61.3% robust)
+  Progress: 500/600 (61.0% robust)
+  Progress: 550/600 (60.9% robust)
+  Progress: 600/600 (60.0% robust)
+
+  RESULT: 360/600 robust = 60.0%
+  95% CI: [55.0%, 65.0%]
+
+============================================================
+DIGIT 1
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (100.0% robust)
+  Progress: 100/600 (100.0% robust)
+  Progress: 150/600 (100.0% robust)
+  Progress: 200/600 (100.0% robust)
+  Progress: 250/600 (100.0% robust)
+  Progress: 300/600 (100.0% robust)
+  Progress: 350/600 (100.0% robust)
+  Progress: 400/600 (100.0% robust)
+  Progress: 450/600 (100.0% robust)
+  Progress: 500/600 (100.0% robust)
+  Progress: 550/600 (100.0% robust)
+  Progress: 600/600 (100.0% robust)
+
+  RESULT: 600/600 robust = 100.0%
+  95% CI: [95.0%, 100.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (100.0% robust)
+  Progress: 100/600 (100.0% robust)
+  Progress: 150/600 (99.3% robust)
+  Progress: 200/600 (99.5% robust)
+  Progress: 250/600 (99.6% robust)
+  Progress: 300/600 (99.3% robust)
+  Progress: 350/600 (99.4% robust)
+  Progress: 400/600 (99.5% robust)
+  Progress: 450/600 (99.6% robust)
+  Progress: 500/600 (99.4% robust)
+  Progress: 550/600 (99.5% robust)
+  Progress: 600/600 (99.3% robust)
+
+  RESULT: 596/600 robust = 99.3%
+  95% CI: [94.3%, 100.0%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (16.0% robust)
+  Progress: 100/600 (11.0% robust)
+  Progress: 150/600 (9.3% robust)
+  Progress: 200/600 (10.0% robust)
+  Progress: 250/600 (9.2% robust)
+  Progress: 300/600 (8.0% robust)
+  Progress: 350/600 (7.4% robust)
+  Progress: 400/600 (6.8% robust)
+  Progress: 450/600 (6.4% robust)
+  Progress: 500/600 (6.4% robust)
+  Progress: 550/600 (6.5% robust)
+  Progress: 600/600 (6.2% robust)
+
+  RESULT: 37/600 robust = 6.2%
+  95% CI: [1.2%, 11.2%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (0.0% robust)
+  Progress: 100/600 (0.0% robust)
+  Progress: 150/600 (0.0% robust)
+  Progress: 200/600 (0.0% robust)
+  Progress: 250/600 (0.0% robust)
+  Progress: 300/600 (0.3% robust)
+  Progress: 350/600 (0.3% robust)
+  Progress: 400/600 (0.2% robust)
+  Progress: 450/600 (0.2% robust)
+  Progress: 500/600 (0.2% robust)
+  Progress: 550/600 (0.4% robust)
+  Progress: 600/600 (0.3% robust)
+
+  RESULT: 2/600 robust = 0.3%
+  95% CI: [0.0%, 5.3%]
+
+============================================================
+DIGIT 2
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (92.0% robust)
+  Progress: 100/600 (95.0% robust)
+  Progress: 150/600 (90.0% robust)
+  Progress: 200/600 (89.0% robust)
+  Progress: 250/600 (90.4% robust)
+  Progress: 300/600 (89.7% robust)
+  Progress: 350/600 (90.0% robust)
+  Progress: 400/600 (90.2% robust)
+  Progress: 450/600 (90.0% robust)
+  Progress: 500/600 (90.4% robust)
+  Progress: 550/600 (89.8% robust)
+  Progress: 600/600 (90.0% robust)
+
+  RESULT: 540/600 robust = 90.0%
+  95% CI: [85.0%, 95.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (86.0% robust)
+  Progress: 100/600 (88.0% robust)
+  Progress: 150/600 (82.7% robust)
+  Progress: 200/600 (83.0% robust)
+  Progress: 250/600 (85.2% robust)
+  Progress: 300/600 (85.7% robust)
+  Progress: 350/600 (85.4% robust)
+  Progress: 400/600 (85.8% robust)
+  Progress: 450/600 (86.0% robust)
+  Progress: 500/600 (86.8% robust)
+  Progress: 550/600 (86.4% robust)
+  Progress: 600/600 (86.5% robust)
+
+  RESULT: 519/600 robust = 86.5%
+  95% CI: [81.5%, 91.5%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (72.0% robust)
+  Progress: 100/600 (68.0% robust)
+  Progress: 150/600 (62.0% robust)
+  Progress: 200/600 (62.0% robust)
+  Progress: 250/600 (64.8% robust)
+  Progress: 300/600 (64.3% robust)
+  Progress: 350/600 (62.3% robust)
+  Progress: 400/600 (62.7% robust)
+  Progress: 450/600 (62.2% robust)
+  Progress: 500/600 (64.0% robust)
+  Progress: 550/600 (63.5% robust)
+  Progress: 600/600 (64.3% robust)
+
+  RESULT: 386/600 robust = 64.3%
+  95% CI: [59.3%, 69.3%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (32.0% robust)
+  Progress: 100/600 (29.0% robust)
+  Progress: 150/600 (25.3% robust)
+  Progress: 200/600 (24.5% robust)
+  Progress: 250/600 (28.0% robust)
+  Progress: 300/600 (26.3% robust)
+  Progress: 350/600 (25.1% robust)
+  Progress: 400/600 (26.0% robust)
+  Progress: 450/600 (25.6% robust)
+  Progress: 500/600 (26.4% robust)
+  Progress: 550/600 (26.2% robust)
+  Progress: 600/600 (26.2% robust)
+
+  RESULT: 157/600 robust = 26.2%
+  95% CI: [21.2%, 31.2%]
+
+============================================================
+DIGIT 3
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (100.0% robust)
+  Progress: 100/600 (100.0% robust)
+  Progress: 150/600 (100.0% robust)
+  Progress: 200/600 (100.0% robust)
+  Progress: 250/600 (99.6% robust)
+  Progress: 300/600 (99.7% robust)
+  Progress: 350/600 (99.7% robust)
+  Progress: 400/600 (99.8% robust)
+  Progress: 450/600 (99.8% robust)
+  Progress: 500/600 (99.8% robust)
+  Progress: 550/600 (99.6% robust)
+  Progress: 600/600 (99.7% robust)
+
+  RESULT: 598/600 robust = 99.7%
+  95% CI: [94.7%, 100.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (100.0% robust)
+  Progress: 100/600 (100.0% robust)
+  Progress: 150/600 (99.3% robust)
+  Progress: 200/600 (99.5% robust)
+  Progress: 250/600 (99.2% robust)
+  Progress: 300/600 (99.3% robust)
+  Progress: 350/600 (99.4% robust)
+  Progress: 400/600 (99.2% robust)
+  Progress: 450/600 (99.3% robust)
+  Progress: 500/600 (99.4% robust)
+  Progress: 550/600 (98.9% robust)
+  Progress: 600/600 (99.0% robust)
+
+  RESULT: 594/600 robust = 99.0%
+  95% CI: [94.0%, 100.0%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (94.0% robust)
+  Progress: 100/600 (84.0% robust)
+  Progress: 150/600 (86.0% robust)
+  Progress: 200/600 (88.5% robust)
+  Progress: 250/600 (87.6% robust)
+  Progress: 300/600 (88.3% robust)
+  Progress: 350/600 (87.7% robust)
+  Progress: 400/600 (88.0% robust)
+  Progress: 450/600 (87.1% robust)
+  Progress: 500/600 (87.6% robust)
+  Progress: 550/600 (87.8% robust)
+  Progress: 600/600 (87.7% robust)
+
+  RESULT: 526/600 robust = 87.7%
+  95% CI: [82.7%, 92.7%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (74.0% robust)
+  Progress: 100/600 (60.0% robust)
+  Progress: 150/600 (53.3% robust)
+  Progress: 200/600 (51.5% robust)
+  Progress: 250/600 (50.4% robust)
+  Progress: 300/600 (51.0% robust)
+  Progress: 350/600 (52.6% robust)
+  Progress: 400/600 (55.0% robust)
+  Progress: 450/600 (54.4% robust)
+  Progress: 500/600 (55.2% robust)
+  Progress: 550/600 (55.3% robust)
+  Progress: 600/600 (55.5% robust)
+
+  RESULT: 333/600 robust = 55.5%
+  95% CI: [50.5%, 60.5%]
+
+============================================================
+DIGIT 4
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (80.0% robust)
+  Progress: 100/600 (79.0% robust)
+  Progress: 150/600 (76.7% robust)
+  Progress: 200/600 (76.0% robust)
+  Progress: 250/600 (77.6% robust)
+  Progress: 300/600 (79.0% robust)
+  Progress: 350/600 (79.1% robust)
+  Progress: 400/600 (79.5% robust)
+  Progress: 450/600 (76.2% robust)
+  Progress: 500/600 (76.0% robust)
+  Progress: 550/600 (75.3% robust)
+  Progress: 600/600 (75.3% robust)
+
+  RESULT: 452/600 robust = 75.3%
+  95% CI: [70.3%, 80.3%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (28.0% robust)
+  Progress: 100/600 (36.0% robust)
+  Progress: 150/600 (34.0% robust)
+  Progress: 200/600 (35.0% robust)
+  Progress: 250/600 (37.6% robust)
+  Progress: 300/600 (39.0% robust)
+  Progress: 350/600 (39.4% robust)
+  Progress: 400/600 (40.0% robust)
+  Progress: 450/600 (38.0% robust)
+  Progress: 500/600 (38.6% robust)
+  Progress: 550/600 (39.5% robust)
+  Progress: 600/600 (39.3% robust)
+
+  RESULT: 236/600 robust = 39.3%
+  95% CI: [34.3%, 44.3%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (0.0% robust)
+  Progress: 100/600 (0.0% robust)
+  Progress: 150/600 (0.0% robust)
+  Progress: 200/600 (0.5% robust)
+  Progress: 250/600 (0.4% robust)
+  Progress: 300/600 (0.7% robust)
+  Progress: 350/600 (0.6% robust)
+  Progress: 400/600 (0.5% robust)
+  Progress: 450/600 (0.4% robust)
+  Progress: 500/600 (0.6% robust)
+  Progress: 550/600 (0.5% robust)
+  Progress: 600/600 (0.5% robust)
+
+  RESULT: 3/600 robust = 0.5%
+  95% CI: [0.0%, 5.5%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (0.0% robust)
+  Progress: 100/600 (0.0% robust)
+  Progress: 150/600 (0.0% robust)
+  Progress: 200/600 (0.0% robust)
+  Progress: 250/600 (0.0% robust)
+  Progress: 300/600 (0.0% robust)
+  Progress: 350/600 (0.0% robust)
+  Progress: 400/600 (0.0% robust)
+  Progress: 450/600 (0.0% robust)
+  Progress: 500/600 (0.0% robust)
+  Progress: 550/600 (0.0% robust)
+  Progress: 600/600 (0.0% robust)
+
+  RESULT: 0/600 robust = 0.0%
+  95% CI: [0.0%, 5.0%]
+
+============================================================
+DIGIT 5
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (94.0% robust)
+  Progress: 100/600 (93.0% robust)
+  Progress: 150/600 (91.3% robust)
+  Progress: 200/600 (92.5% robust)
+  Progress: 250/600 (93.6% robust)
+  Progress: 300/600 (93.7% robust)
+  Progress: 350/600 (93.4% robust)
+  Progress: 400/600 (93.8% robust)
+  Progress: 450/600 (93.6% robust)
+  Progress: 500/600 (93.0% robust)
+  Progress: 550/600 (93.5% robust)
+  Progress: 600/600 (93.5% robust)
+
+  RESULT: 561/600 robust = 93.5%
+  95% CI: [88.5%, 98.5%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (86.0% robust)
+  Progress: 100/600 (82.0% robust)
+  Progress: 150/600 (80.7% robust)
+  Progress: 200/600 (84.5% robust)
+  Progress: 250/600 (86.0% robust)
+  Progress: 300/600 (84.7% robust)
+  Progress: 350/600 (84.6% robust)
+  Progress: 400/600 (85.5% robust)
+  Progress: 450/600 (84.9% robust)
+  Progress: 500/600 (83.8% robust)
+  Progress: 550/600 (84.0% robust)
+  Progress: 600/600 (84.3% robust)
+
+  RESULT: 506/600 robust = 84.3%
+  95% CI: [79.3%, 89.3%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (48.0% robust)
+  Progress: 100/600 (56.0% robust)
+  Progress: 150/600 (55.3% robust)
+  Progress: 200/600 (61.0% robust)
+  Progress: 250/600 (62.4% robust)
+  Progress: 300/600 (60.3% robust)
+  Progress: 350/600 (60.3% robust)
+  Progress: 400/600 (60.0% robust)
+  Progress: 450/600 (58.9% robust)
+  Progress: 500/600 (57.4% robust)
+  Progress: 550/600 (58.5% robust)
+  Progress: 600/600 (58.0% robust)
+
+  RESULT: 348/600 robust = 58.0%
+  95% CI: [53.0%, 63.0%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (14.0% robust)
+  Progress: 100/600 (18.0% robust)
+  Progress: 150/600 (18.0% robust)
+  Progress: 200/600 (18.5% robust)
+  Progress: 250/600 (20.8% robust)
+  Progress: 300/600 (20.3% robust)
+  Progress: 350/600 (18.9% robust)
+  Progress: 400/600 (18.2% robust)
+  Progress: 450/600 (18.4% robust)
+  Progress: 500/600 (17.2% robust)
+  Progress: 550/600 (16.4% robust)
+  Progress: 600/600 (16.2% robust)
+
+  RESULT: 97/600 robust = 16.2%
+  95% CI: [11.2%, 21.2%]
+
+============================================================
+DIGIT 6
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (76.0% robust)
+  Progress: 100/600 (82.0% robust)
+  Progress: 150/600 (81.3% robust)
+  Progress: 200/600 (82.0% robust)
+  Progress: 250/600 (81.6% robust)
+  Progress: 300/600 (81.0% robust)
+  Progress: 350/600 (80.9% robust)
+  Progress: 400/600 (80.5% robust)
+  Progress: 450/600 (80.0% robust)
+  Progress: 500/600 (80.4% robust)
+  Progress: 550/600 (80.9% robust)
+  Progress: 600/600 (80.3% robust)
+
+  RESULT: 482/600 robust = 80.3%
+  95% CI: [75.3%, 85.3%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (52.0% robust)
+  Progress: 100/600 (50.0% robust)
+  Progress: 150/600 (52.7% robust)
+  Progress: 200/600 (53.5% robust)
+  Progress: 250/600 (50.8% robust)
+  Progress: 300/600 (50.3% robust)
+  Progress: 350/600 (49.1% robust)
+  Progress: 400/600 (48.8% robust)
+  Progress: 450/600 (49.8% robust)
+  Progress: 500/600 (49.8% robust)
+  Progress: 550/600 (49.6% robust)
+  Progress: 600/600 (49.0% robust)
+
+  RESULT: 294/600 robust = 49.0%
+  95% CI: [44.0%, 54.0%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (12.0% robust)
+  Progress: 100/600 (11.0% robust)
+  Progress: 150/600 (10.7% robust)
+  Progress: 200/600 (10.0% robust)
+  Progress: 250/600 (8.8% robust)
+  Progress: 300/600 (10.0% robust)
+  Progress: 350/600 (10.0% robust)
+  Progress: 400/600 (9.2% robust)
+  Progress: 450/600 (9.1% robust)
+  Progress: 500/600 (9.2% robust)
+  Progress: 550/600 (8.9% robust)
+  Progress: 600/600 (9.7% robust)
+
+  RESULT: 58/600 robust = 9.7%
+  95% CI: [4.7%, 14.7%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (0.0% robust)
+  Progress: 100/600 (0.0% robust)
+  Progress: 150/600 (0.0% robust)
+  Progress: 200/600 (0.0% robust)
+  Progress: 250/600 (0.0% robust)
+  Progress: 300/600 (0.0% robust)
+  Progress: 350/600 (0.0% robust)
+  Progress: 400/600 (0.2% robust)
+  Progress: 450/600 (0.2% robust)
+  Progress: 500/600 (0.2% robust)
+  Progress: 550/600 (0.2% robust)
+  Progress: 600/600 (0.2% robust)
+
+  RESULT: 1/600 robust = 0.2%
+  95% CI: [0.0%, 5.2%]
+
+============================================================
+DIGIT 7
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (100.0% robust)
+  Progress: 100/600 (100.0% robust)
+  Progress: 150/600 (99.3% robust)
+  Progress: 200/600 (99.5% robust)
+  Progress: 250/600 (99.6% robust)
+  Progress: 300/600 (99.0% robust)
+  Progress: 350/600 (99.1% robust)
+  Progress: 400/600 (99.2% robust)
+  Progress: 450/600 (99.3% robust)
+  ERROR on sample 476: Could not execute the command: ['/Users/michael_kh (skipped, counted as non-robust)
+  Progress: 500/600 (99.2% robust, 1 skipped)
+  Progress: 550/600 (99.3% robust, 1 skipped)
+  Progress: 600/600 (99.3% robust, 1 skipped)
+
+  RESULT: 596/600 robust = 99.3%
+  95% CI: [94.3%, 100.0%]
+  (Skipped 1 difficult samples, counted as non-robust)
+
+--- ε=0.02 ---
+  Progress: 50/600 (94.0% robust)
+  Progress: 100/600 (96.0% robust)
+  Progress: 150/600 (94.7% robust)
+  Progress: 200/600 (95.5% robust)
+  Progress: 250/600 (96.0% robust)
+  Progress: 300/600 (95.0% robust)
+  Progress: 350/600 (95.7% robust)
+  Progress: 400/600 (95.8% robust)
+  Progress: 450/600 (95.1% robust)
+  Progress: 500/600 (95.4% robust)
+  Progress: 550/600 (95.6% robust)
+  Progress: 600/600 (95.7% robust)
+
+  RESULT: 574/600 robust = 95.7%
+  95% CI: [90.7%, 100.0%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (72.0% robust)
+  Progress: 100/600 (61.0% robust)
+  Progress: 150/600 (60.0% robust)
+  Progress: 200/600 (60.0% robust)
+  Progress: 250/600 (61.6% robust)
+  Progress: 300/600 (61.3% robust)
+  Progress: 350/600 (60.9% robust)
+  Progress: 400/600 (60.0% robust)
+  Progress: 450/600 (58.7% robust)
+  Progress: 500/600 (58.4% robust)
+  Progress: 550/600 (58.7% robust)
+  Progress: 600/600 (59.0% robust)
+
+  RESULT: 354/600 robust = 59.0%
+  95% CI: [54.0%, 64.0%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (10.0% robust)
+  Progress: 100/600 (10.0% robust)
+  Progress: 150/600 (10.0% robust)
+  Progress: 200/600 (9.0% robust)
+  Progress: 250/600 (9.2% robust)
+  Progress: 300/600 (10.3% robust)
+  Progress: 350/600 (10.0% robust)
+  Progress: 400/600 (9.8% robust)
+  Progress: 450/600 (9.8% robust)
+  Progress: 500/600 (9.6% robust)
+  Progress: 550/600 (9.5% robust)
+  Progress: 600/600 (9.8% robust)
+
+  RESULT: 59/600 robust = 9.8%
+  95% CI: [4.8%, 14.8%]
+
+============================================================
+DIGIT 8
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (98.0% robust)
+  Progress: 100/600 (97.0% robust)
+  Progress: 150/600 (95.3% robust)
+  Progress: 200/600 (95.5% robust)
+  Progress: 250/600 (95.6% robust)
+  Progress: 300/600 (96.3% robust)
+  Progress: 350/600 (96.3% robust)
+  Progress: 400/600 (95.5% robust)
+  Progress: 450/600 (95.3% robust)
+  Progress: 500/600 (95.2% robust)
+  Progress: 550/600 (95.3% robust)
+  Progress: 600/600 (95.7% robust)
+
+  RESULT: 574/600 robust = 95.7%
+  95% CI: [90.7%, 100.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (92.0% robust)
+  Progress: 100/600 (90.0% robust)
+  Progress: 150/600 (88.0% robust)
+  Progress: 200/600 (87.0% robust)
+  Progress: 250/600 (87.2% robust)
+  Progress: 300/600 (88.0% robust)
+  Progress: 350/600 (88.9% robust)
+  Progress: 400/600 (87.2% robust)
+  Progress: 450/600 (87.6% robust)
+  Progress: 500/600 (86.8% robust)
+  Progress: 550/600 (86.7% robust)
+  Progress: 600/600 (86.8% robust)
+
+  RESULT: 521/600 robust = 86.8%
+  95% CI: [81.8%, 91.8%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (42.0% robust)
+  Progress: 100/600 (35.0% robust)
+  Progress: 150/600 (36.0% robust)
+  Progress: 200/600 (40.0% robust)
+  Progress: 250/600 (42.8% robust)
+  Progress: 300/600 (44.0% robust)
+  Progress: 350/600 (46.0% robust)
+  Progress: 400/600 (45.5% robust)
+  Progress: 450/600 (45.6% robust)
+  Progress: 500/600 (47.2% robust)
+  Progress: 550/600 (47.3% robust)
+  Progress: 600/600 (46.5% robust)
+
+  RESULT: 279/600 robust = 46.5%
+  95% CI: [41.5%, 51.5%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (4.0% robust)
+  Progress: 100/600 (3.0% robust)
+  Progress: 150/600 (2.7% robust)
+  Progress: 200/600 (3.5% robust)
+  Progress: 250/600 (4.4% robust)
+  Progress: 300/600 (4.0% robust)
+  Progress: 350/600 (4.3% robust)
+  Progress: 400/600 (4.5% robust)
+  Progress: 450/600 (4.4% robust)
+  Progress: 500/600 (4.8% robust)
+  Progress: 550/600 (5.3% robust)
+  Progress: 600/600 (5.3% robust)
+
+  RESULT: 32/600 robust = 5.3%
+  95% CI: [0.3%, 10.3%]
+
+============================================================
+DIGIT 9
+============================================================
+
+--- ε=0.01 ---
+  Progress: 50/600 (98.0% robust)
+  Progress: 100/600 (98.0% robust)
+  Progress: 150/600 (96.7% robust)
+  Progress: 200/600 (97.0% robust)
+  Progress: 250/600 (97.6% robust)
+  Progress: 300/600 (97.0% robust)
+  Progress: 350/600 (97.4% robust)
+  Progress: 400/600 (97.5% robust)
+  Progress: 450/600 (96.4% robust)
+  Progress: 500/600 (96.6% robust)
+  Progress: 550/600 (96.5% robust)
+  Progress: 600/600 (96.8% robust)
+
+  RESULT: 581/600 robust = 96.8%
+  95% CI: [91.8%, 100.0%]
+
+--- ε=0.02 ---
+  Progress: 50/600 (90.0% robust)
+  Progress: 100/600 (88.0% robust)
+  Progress: 150/600 (86.7% robust)
+  Progress: 200/600 (86.0% robust)
+  Progress: 250/600 (86.4% robust)
+  Progress: 300/600 (86.7% robust)
+  Progress: 350/600 (87.7% robust)
+  Progress: 400/600 (87.5% robust)
+  Progress: 450/600 (86.2% robust)
+  Progress: 500/600 (86.2% robust)
+  Progress: 550/600 (86.9% robust)
+  Progress: 600/600 (87.5% robust)
+
+  RESULT: 525/600 robust = 87.5%
+  95% CI: [82.5%, 92.5%]
+
+--- ε=0.05 ---
+  Progress: 50/600 (24.0% robust)
+  Progress: 100/600 (20.0% robust)
+  Progress: 150/600 (19.3% robust)
+  Progress: 200/600 (19.5% robust)
+  Progress: 250/600 (18.8% robust)
+  Progress: 300/600 (19.7% robust)
+  Progress: 350/600 (19.4% robust)
+  Progress: 400/600 (20.5% robust)
+  Progress: 450/600 (19.8% robust)
+  Progress: 500/600 (19.6% robust)
+  Progress: 550/600 (19.6% robust)
+  Progress: 600/600 (20.5% robust)
+
+  RESULT: 123/600 robust = 20.5%
+  95% CI: [15.5%, 25.5%]
+
+--- ε=0.1 ---
+  Progress: 50/600 (0.0% robust)
+  Progress: 100/600 (1.0% robust)
+  Progress: 150/600 (1.3% robust)
+  Progress: 200/600 (1.5% robust)
+  Progress: 250/600 (1.2% robust)
+  Progress: 300/600 (1.0% robust)
+  Progress: 350/600 (0.9% robust)
+  Progress: 400/600 (1.0% robust)
+  Progress: 450/600 (0.9% robust)
+  Progress: 500/600 (0.8% robust)
+  Progress: 550/600 (0.9% robust)
+  Progress: 600/600 (0.8% robust)
+
+  RESULT: 5/600 robust = 0.8%
+  95% CI: [0.0%, 5.8%]
+
+============================================================
+Saving complete results...
+Saved to: epsilon_robustness_results.npz
+
+Generating plot...
+Saved plot to: epsilon_robustness_full.png
+
+============================================================
+Full-scale test complete!
+============================================================
+
+SUMMARY OF RESULTS:
+============================================================
+
+Digit 0:
+  ε=0.01: 98.5% [93.5%, 100.0%]
+  ε=0.02: 97.5% [92.5%, 100.0%]
+  ε=0.05: 88.5% [83.5%, 93.5%]
+  ε=0.1: 60.0% [55.0%, 65.0%]
+
+Digit 1:
+  ε=0.01: 100.0% [95.0%, 100.0%]
+  ε=0.02: 99.3% [94.3%, 100.0%]
+  ε=0.05: 6.2% [1.2%, 11.2%]
+  ε=0.1: 0.3% [0.0%, 5.3%]
+
+Digit 2:
+  ε=0.01: 90.0% [85.0%, 95.0%]
+  ε=0.02: 86.5% [81.5%, 91.5%]
+  ε=0.05: 64.3% [59.3%, 69.3%]
+  ε=0.1: 26.2% [21.2%, 31.2%]
+
+Digit 3:
+  ε=0.01: 99.7% [94.7%, 100.0%]
+  ε=0.02: 99.0% [94.0%, 100.0%]
+  ε=0.05: 87.7% [82.7%, 92.7%]
+  ε=0.1: 55.5% [50.5%, 60.5%]
+
+Digit 4:
+  ε=0.01: 75.3% [70.3%, 80.3%]
+  ε=0.02: 39.3% [34.3%, 44.3%]
+  ε=0.05: 0.5% [0.0%, 5.5%]
+  ε=0.1: 0.0% [0.0%, 5.0%]
+
+Digit 5:
+  ε=0.01: 93.5% [88.5%, 98.5%]
+  ε=0.02: 84.3% [79.3%, 89.3%]
+  ε=0.05: 58.0% [53.0%, 63.0%]
+  ε=0.1: 16.2% [11.2%, 21.2%]
+
+Digit 6:
+  ε=0.01: 80.3% [75.3%, 85.3%]
+  ε=0.02: 49.0% [44.0%, 54.0%]
+  ε=0.05: 9.7% [4.7%, 14.7%]
+  ε=0.1: 0.2% [0.0%, 5.2%]
+
+Digit 7:
+  ε=0.01: 99.3% [94.3%, 100.0%]
+  ε=0.02: 95.7% [90.7%, 100.0%]
+  ε=0.05: 59.0% [54.0%, 64.0%]
+  ε=0.1: 9.8% [4.8%, 14.8%]
+
+Digit 8:
+  ε=0.01: 95.7% [90.7%, 100.0%]
+  ε=0.02: 86.8% [81.8%, 91.8%]
+  ε=0.05: 46.5% [41.5%, 51.5%]
+  ε=0.1: 5.3% [0.3%, 10.3%]
+
+Digit 9:
+  ε=0.01: 96.8% [91.8%, 100.0%]
+  ε=0.02: 87.5% [82.5%, 92.5%]
+  ε=0.05: 20.5% [15.5%, 25.5%]
+  ε=0.1: 0.8% [0.0%, 5.8%]

@@ -2,3 +2,4 @@
 .vscode
 venv
 check.py
+__pycache__

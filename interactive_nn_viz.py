@@ -100,17 +100,17 @@ class NNViz:
 
         # Network layout positions
         self.layer_x = [0.08, 0.36, 0.64, 0.92]
-        self.neuron_positions = {}  # (layer, idx) -> (x, y)
-        self.neuron_artists = {}    # (layer, idx) -> Circle artist
-        self.edge_artists = []      # List of line artists
-        self.activation_values = {} # (layer, idx) -> activation value
-        self.hover_annotation = None  # Annotation for hover text
+        self.neuron_positions = {}
+        self.neuron_artists = {}
+        self.edge_artists = []
+        self.activation_values = {}
+        self.hover_annotation = None
+        self.pixel_highlight = None
 
         self.setup_layout()
         self.current_digit_idx = 0
         self.update_visualization()
 
-        # Connect hover event
         self.fig.canvas.mpl_connect('motion_notify_event', self.on_hover)
 
     def setup_layout(self):
@@ -354,7 +354,10 @@ class NNViz:
         if event.inaxes != self.ax_nn:
             if self.hover_annotation:
                 self.hover_annotation.set_visible(False)
-                self.fig.canvas.draw_idle()
+            if self.pixel_highlight:
+                self.pixel_highlight.remove()
+                self.pixel_highlight = None
+            self.fig.canvas.draw_idle()
             return
 
         # Check if mouse is near any neuron
@@ -379,22 +382,35 @@ class NNViz:
                 self.show_neuron_info(layer_idx, neuron_idx, event.xdata, event.ydata)
                 return
 
-        # No neuron found, hide annotation
+        # No neuron found, hide annotation and pixel highlight
         if self.hover_annotation:
             self.hover_annotation.set_visible(False)
-            self.fig.canvas.draw_idle()
+        if self.pixel_highlight:
+            self.pixel_highlight.remove()
+            self.pixel_highlight = None
+        self.fig.canvas.draw_idle()
 
     def show_neuron_info(self, layer_idx, neuron_idx, x, y):
         """Display detailed information about a neuron"""
         info_lines = []
 
-        # Layer name and neuron index
+        # Clear previous pixel highlight if exists
+        if self.pixel_highlight:
+            self.pixel_highlight.remove()
+            self.pixel_highlight = None
+
         layer_names = ['Input', 'Hidden1', 'Hidden2', 'Output']
         info_lines.append(f"=== {layer_names[layer_idx]} Layer ===")
         info_lines.append(f"Neuron Index: {neuron_idx}")
 
-        # Symbolic name in polytope
         if layer_idx == 0:
+            # Highlight corresponding pixel in the digit image
+            pixel_row = neuron_idx // 7
+            pixel_col = neuron_idx % 7
+            self.pixel_highlight = self.ax_digit.add_patch(
+                patches.Rectangle((pixel_col - 0.5, pixel_row - 0.5), 1, 1,
+                                linewidth=3, edgecolor='red', facecolor='none')
+            )
             info_lines.append(f"Variable: x0[{neuron_idx}]")
             info_lines.append(f"Meaning: Input pixel {neuron_idx} (position {neuron_idx//7},{neuron_idx%7})")
             info_lines.append(f"Value: {self.activation_values.get((layer_idx, neuron_idx), 0):.4f}")

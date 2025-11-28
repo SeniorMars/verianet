@@ -75,7 +75,7 @@ class NeuroVis:
             self.b3 = np.zeros(10)
 
         # Aesthetic Configurations
-        self.cmap_w = 'RdBu_r'     # Weights: Red (Neg) to Blue (Pos)
+        self.cmap_w = 'RdBu'     # Weights: Red (Neg) to Blue (Pos)
         self.cmap_act = 'viridis'  # Activations
         # PathEffect: Thick black outline for white text readability
         self.pe_txt = [pe.withStroke(linewidth=2.5, foreground='black')]

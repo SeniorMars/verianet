@@ -147,7 +147,7 @@ def analyze_neuron_on_real_data(layer, neuron_idx, n_samples=1000, show_plot=Tru
     ax = axes[2]
     if layer == 1:
         weights = W1[:, neuron_idx].reshape(7, 7)
-        im = ax.imshow(weights, cmap='RdBu_r', vmin=-abs(weights).max(), vmax=abs(weights).max())
+        im = ax.imshow(weights, cmap='RdBu', vmin=-abs(weights).max(), vmax=abs(weights).max())
         ax.set_title(f'Input Weight Pattern\n(b={b1[neuron_idx]:.2f})', fontsize=11, fontweight='bold')
         plt.colorbar(im, ax=ax, fraction=0.046)
     else:

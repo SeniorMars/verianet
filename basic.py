@@ -291,34 +291,48 @@ def tight_gelu_envelope(L: float, U: float) -> Envelope:
     - Concave on (~-0.17, ~0.95)
     - Convex on (~0.95, ∞)
     """
-
-    # GELU derivative: d/dx[x*Phi(x)] = Phi(x) + x*phi(x)
-    # where phi is the standard normal PDF
+    # If bounds are very tight, just use identity
+    if abs(U - L) < 1e-6:
+        return [(1.0, 0.0, L, U)], [(1.0, 0.0, L, U)]
+    
+    # For large positive values where GELU ≈ x, use simple linear bounds
+    if L > 2.0:
+        return [(1.0, 0.0, L, U)], [(1.0, 0.0, L, U)]
+    
+    # For large negative values where GELU ≈ 0
+    if U < -3.0:
+        return [(0.0, 0.0, L, U)], [(0.0, 0.0, L, U)]
+    
     def gelu_deriv(x: float) -> float:
         phi_x = np.exp(-0.5 * x**2) / np.sqrt(2 * np.pi)
         Phi_x = 0.5 * (1 + erf(x / np.sqrt(2)))
         return Phi_x + x * phi_x
 
-    # Find point of maximum derivative in [L, U] by sampling
-    # (For production: use scipy.optimize.minimize_scalar)
     xs = np.linspace(L, U, 100)
     derivs = np.array([gelu_deriv(x) for x in xs])
     max_idx = np.argmax(derivs)
     x_star = xs[max_idx]
 
-    # Lower bound: tangent at x_star
     y_star = gelu(np.array([x_star])).item()
-    m_lower = gelu_deriv(x_star)
-    c_lower = y_star - m_lower * x_star
+    m_tangent = gelu_deriv(x_star)
+    c_tangent = y_star - m_tangent * x_star
 
-    # Upper bound: chord from L to U
     y_L = gelu(np.array([L])).item()
     y_U = gelu(np.array([U])).item()
-    m_upper = (y_U - y_L) / (U - L) if U != L else 0.0
-    c_upper = y_L - m_upper * L
+    m_secant = (y_U - y_L) / (U - L) if U != L else 0.0
+    c_secant = y_L - m_secant * L
 
-    lower = [(m_lower, c_lower, L, U)]
-    upper = [(m_upper, c_upper, L, U)]
+    # CRITICAL: Check which is actually lower/upper at midpoint
+    mid = (L + U) / 2
+    tangent_at_mid = m_tangent * mid + c_tangent
+    secant_at_mid = m_secant * mid + c_secant
+    
+    if tangent_at_mid <= secant_at_mid:
+        lower = [(m_tangent, c_tangent, L, U)]
+        upper = [(m_secant, c_secant, L, U)]
+    else:
+        lower = [(m_secant, c_secant, L, U)]
+        upper = [(m_tangent, c_tangent, L, U)]
 
     return lower, upper
 

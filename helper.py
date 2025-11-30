@@ -178,9 +178,86 @@ class PyomoPolyAnalyzer:
             return obj_value, results
         else:
             return None, results
+        
+    def optimize_with_timelimit(self, objective_expr, time_limit: int, sense='min'):
+        """
+        Optimize with a time limit (in seconds).
+        Note: not all solvers support time limits.
+        """
+        # Delete previous objective if it exists to avoid warnings
+        if hasattr(self.model, 'obj'):
+            self.model.del_component('obj')
+        
+        if sense == 'min':
+            self.model.obj = pyo.Objective(expr=objective_expr, sense=pyo.minimize)
+        else:
+            self.model.obj = pyo.Objective(expr=objective_expr, sense=pyo.maximize)
+        
+        solver = pyo.SolverFactory('glpk')  # change if you want gurobi, etc.
+        solver.options['tmlim'] = time_limit  # for glpk; change for other solvers
+        results = solver.solve(self.model, tee=False)
+        
+        term = results.solver.termination_condition
+        if term == pyo.TerminationCondition.optimal:
+            obj_value = pyo.value(self.model.obj)
+            return obj_value, results
+        else:
+            return None, results
     
     def get_polytope_description(self):
         """
         TODO: Extract all constraints and convert to A x <= b.
         """
         raise NotImplementedError("Not implemented yet")
+    
+    def get_active_constraints(self, tol: float = 1e-6):
+        """
+        Return a list of (full_name, side) for constraints that are active (tight)
+        at the current solution.
+
+        - full_name is like 'x0_lb[3]' or 'z1_lower_5_12'
+        - side is 'lower', 'upper', or 'equality'
+        """
+        active = []
+
+        for con in self.model.component_objects(pyo.Constraint, active=True):
+            # con.name: component name, e.g. 'x0_lb', 'a1_affine', 'z1_lower_0_0'
+            for idx in con:
+                c = con[idx]  # this is a ConstraintData
+                # Build a readable full name like 'x0_lb[3]' or just 'z1_lower_0_0'
+                if idx is None or idx == ():
+                    full_name = con.name
+                else:
+                    full_name = f"{con.name}[{idx}]"
+
+                # Skip infeasible / weird constraints
+                if c.body is None:
+                    continue
+
+                val = pyo.value(c.body)
+                # Pyomo uses lower/upper to store inequality bounds; equality has both
+                lower = c.lower
+                upper = c.upper
+
+                if c.equality:
+                    # Equality constraints are always tight; up to you if you want them
+                    active.append((full_name, "equality"))
+                else:
+                    if upper is not None and abs(val - upper) <= tol:
+                        active.append((full_name, "upper"))
+                    if lower is not None and abs(val - lower) <= tol:
+                        active.append((full_name, "lower"))
+
+        return active
+    
+    def optimize_with_active(self, objective_expr, sense='min', tol: float = 1e-6):
+        """
+        Optimize and also return the active constraint list.
+        """
+        obj_value, results = self.optimize(objective_expr, sense=sense)
+        if obj_value is None:
+            # Infeasible or no optimal solution
+            return None, results, []
+
+        active = self.get_active_constraints(tol=tol)
+        return obj_value, results, active

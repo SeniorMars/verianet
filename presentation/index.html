@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Interpretability - Slideshow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        .slide {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 60px;
+            max-width: 1400px;
+            width: 100%;
+            height: 85vh;
+            overflow-y: auto;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+        .slide.active {
+            display: block;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            font-size: 2em;
+            margin: 30px 0 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #666;
+            font-size: 1.4em;
+            margin: 20px 0 10px;
+        }
+        h4 {
+            color: #777;
+            font-size: 1.1em;
+            margin: 15px 0 10px;
+        }
+        p, li {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 1.3em;
+            margin-bottom: 40px;
+        }
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .slide-number {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 18px;
+            min-width: 80px;
+            text-align: center;
+        }
+        .network-viz {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+        .info-panel {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+        }
+        .digit-display {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .digit-canvas {
+            image-rendering: pixelated;
+            border: 2px solid #333;
+            margin: 10px 0;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .controls button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-bar {
+            width: 100px;
+            height: 20px;
+            background: linear-gradient(to right, #ffffe0, #ff4500);
+            border: 1px solid #999;
+        }
+        .formula-box {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-line;
+        }
+        .highlight-box {
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .mechanistic-formula {
+            background: #f0f8ff;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            pointer-events: none;
+            z-index: 3000;
+            display: none;
+            max-width: 350px;
+            white-space: pre-line;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 4000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1200px;
+        }
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover,
+        .modal-close:focus {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <!-- Slides will be dynamically generated here -->
+        <div id="slides"></div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <div id="neuronModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeNeuronModal()">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+        <span class="slide-number" id="slideNumber">1 / 1</span>
+        <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+    </div>
+
+    <script>
+        // ============================================
+        // SLIDE DEFINITIONS - EASY TO EDIT!
+        // ============================================
+        // To add a new slide, just add an object to this array:
+        // { title: "Slide Title", content: "HTML content here" }
+        // ============================================
+
+        const slides = [
+            {
+                title: "Neural Network Interpretability",
+                content: `
+                    <div class="center-content">
+                        <h1>Neural Network Interpretability</h1>
+                        <p class="subtitle">Understanding Deep Learning Through Polytopes</p>
+                        <p style="margin-top: 40px; font-size: 1.2em; text-align: center;">
+                            Burton Alexander, Charlie Cruz, Michael Khalfin
+                        </p>
+                    </div>
+                `
+            },
+            {
+                title: "Motivation",
+                content: `
+                    <h2>Motivation</h2>
+                    <p>Neural networks are famously known to be black boxes</p>
+                    <p style="margin-top: 20px;"><strong>News headline: the New Yorker - Why the Godfather of A.I. Fears What He's Built</strong></p>
+                    <p style="font-style: italic; color: #555;">Geoffrey Hinton has spent a lifetime teaching computers to learn. Now he worries that artificial brains are better than ours.</p>
+                    <p style="margin-top: 30px;">Our methods were for simple feedforward neural net</p>
+                    <p>We don't know whether our methods will scale!</p>
+                `
+            },
+            {
+                title: "Overview",
+                content: `
+                    <h2>Project Overview</h2>
+                    <p>This project demonstrates how we can:</p>
+                    <ul>
+                        <li><strong>Build</strong> a tiny MNIST digit classifier (49 → 3 → 3 → 10 neurons)</li>
+                        <li><strong>Encode</strong> network behavior using polytope representations</li>
+                        <li><strong>Understand</strong> what each neuron learns by building visualizations</li>
+                    </ul>
+                    <h3 style="margin-top: 30px;">Key Innovation</h3>
+                    <p>Whereas it is fairly common to use linear programming to formally verify properties about network behavior, we show it is also a powerful tool for <strong>discovering</strong> properties.</p>
+                `
+            },
+            {
+                title: "Network Architecture",
+                content: `
+                    <h2>Network Architecture</h2>
+                    <p>We use a deliberately small network for our proof of concept:</p>
+
+                    <div class="highlight-box">
+                        <h3>Architecture: GELU-GELU-Linear</h3>
+                        <ul>
+                            <li><strong>Input:</strong> 49 neurons (7×7 downsampled MNIST images)</li>
+                            <li><strong>Hidden Layer 1:</strong> 3 neurons with GELU activation</li>
+                            <li><strong>Hidden Layer 2:</strong> 3 neurons with GELU activation</li>
+                            <li><strong>Output:</strong> 10 neurons (digit classes 0-9)</li>
+                            <li><strong>Post-processing:</strong> Softmax for probabilities</li>
+                        </ul>
+                    </div>
+Analyzing constraints per LP
+                    <h3>Why GELU?</h3>
+                    <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as we can tightly approximate any function with linear envelopes. </p>
+
+                    <div class="formula-box">
+GELU(x) = x · Φ(x)
+
+Where Φ(x) is the CDF of the standard normal distribution
+
+Approximation: GELU(x) ≈ 0.5x(1 + tanh(√(2/π) · (x + 0.044715x³)))
+                    </div>
+                `
+            },
+            {
+                title: "Mathematical Foundation",
+                content: `
+                    <h2>Mathematical Formulation</h2>
+
+                    <h3>Forward Pass</h3>
+                    <div class="formula-box">
+x₀ = input (49-dimensional, 7×7 flattened)
+<br>
+a₁ = W₁ · x₀ + b₁  (shape: 3)
+<br>
+z₁ = GELU(a₁)
+<br>
+a₂ = W₂ · z₁ + b₂  (shape: 3)
+<br>
+z₂ = GELU(a₂)
+<br>
+a₃ = W₃ · z₂ + b₃  (shape: 10, output logits)
+<br>
+Prediction = argmax(a₃)
+                    </div>
+
+                    <h3>Affine Transformations</h3>
+                    <div class="formula-box">
+aℓ = Wℓ · zℓ₋₁ + bℓ
+
+Where:<br>
+• Wℓ is the weight matrix for layer ℓ<br>
+• bℓ is the bias vector<br>
+• zℓ₋₁ is the output from the previous layer
+                    </div>
+                `
+            },
+            {
+                title: "What is a Polytope?",
+                content: `
+                    <h2>The Polytope Representation</h2>
+
+                    <div class="highlight-box">
+                        <h3>Definition</h3>
+                        <p>A <strong>polytope</strong> is a geometric region defined by linear inequalities. For neural network verification, we construct a polytope that <em>over-approximates</em> all possible network behaviors for inputs in a given region.</p>
+                    </div>
+
+                    <h3>Variables in our polytope:</h3>
+                    <ul>
+                        <li><code>x₀[i]</code> for i = 0..48: Input pixels</li>
+                        <li><code>a₁[j], z₁[j]</code> for j = 0..2: Pre/post-activation for hidden layer 1</li>
+                        <li><code>a₂[k], z₂[k]</code> for k = 0..2: Pre/post-activation for hidden layer 2</li>
+                        <li><code>a₃[m]</code> for m = 0..9: Output logits</li>
+                    </ul>
+
+                    <h3>Constraints in our polytope:</h3>
+                    <ol>
+                        <li><strong>Input box:</strong> <code>x₀[i] ∈ [x₀[i] - ε, x₀[i] + ε] ∩ [0, 1]</code> for all i</li>
+                        <li><strong>Affine relations:</strong> <code>aℓ = Wℓ · zℓ₋₁ + bℓ</code> (equality constraints)</li>
+                        <li><strong>GELU envelopes:</strong> Linear lower/upper bounds on <code>z = GELU(a)</code></li>
+                    </ol>
+                `
+            },
+            {
+                title: "GELU Polytope Encoding",
+                content: `
+                    <h2>Encoding GELU with Linear Constraints</h2>
+
+                    <p>The key insight: we can replace the nonlinear GELU activation with tight linear envelopes!</p>
+
+                    <div class="formula-box">
+For each neuron with pre-activation a and post-activation z:
+
+<strong>Lower envelope:</strong>  z ≥ αₗ · a + βₗ
+<strong>Upper envelope:</strong>  z ≤ αᵤ · a + βᵤ
+
+Where αₗ, βₗ, αᵤ, βᵤ are computed using:
+• Interval bounds [L, U] for a (from IBP)
+• Tight linear envelopes that bound GELU over [L, U]
+                    </div>
+
+                    <h3>Why This Works</h3>
+                    <p>By using linear constraints instead of the actual nonlinear GELU function, we create a polytope that:</p>
+                    <ul>
+                        <li>Contains all possible network behaviors in the input region</li>
+                        <li>Can be analyzed using efficient linear programming solvers</li>
+                        <li>Provides formal verification guarantees</li>
+                    </ul>
+
+                    <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
+                        Inspired by <a href="https://ggndpsngh.github.io/files/DeepPoly.pdf" target="_blank" style="color: #667eea;">Singh et al.'s DeepPoly</a>
+                    </p>
+                `
+            },
+            {
+                title: "Interactive Demo",
+                content: `
+                    <h2>Interactive Network Visualization</h2>
+
+                    <div class="legend">
+                        <div class="legend-item">
+                            <span>Node color:</span>
+                            <div class="color-bar"></div>
+                            <span>(Low → High activation)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span style="color: blue;">━━</span> Positive weight
+                        </div>
+                        <div class="legend-item">
+                            <span style="color: red;">━━</span> Negative weight
+                        </div>
+                    </div>
+
+                    <div class="network-viz">
+                        <canvas id="networkCanvas" width="800" height="450"></canvas>
+                        <div>
+                            <div class="digit-display">
+                                <strong>Current Digit:</strong>
+                                <div id="digitLabel" style="font-size: 1.5em; margin: 5px 0;">0</div>
+                                <canvas id="digitCanvas" class="digit-canvas" width="140" height="140"></canvas>
+                                <div class="controls">
+                                    <button onclick="prevDigit()">Previous</button>
+                                    <button onclick="nextDigit()">Next</button>
+                                </div>
+                            </div>
+                            <div class="info-panel" id="infoPanel">Loading...</div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                title: "Mechanistic Interpretability",
+                content: `
+                    <h2>Understanding What Neurons Learn</h2>
+
+                    <p>Each hidden neuron learns interpretable patterns that combine to form digit classifiers.</p>
+
+                    <div class="mechanistic-formula">
+                        <strong>Example: How the network recognizes Digit 0</strong><br><br>
+                        Digit 0 ∝ (++ Frame) - (- Spine) - (- Belt)<br>
+                        <span style="font-size: 0.9em; color: #666;">
+                            Must act like a container &nbsp;&nbsp; Must have empty center &nbsp;&nbsp; Must have empty middle
+                        </span>
+                    </div>
+
+                    <p><strong>Layer 1 Neurons:</strong></p>
+                    <ul>
+                        <li><strong>Frame:</strong> Detects outer boundary/container structure</li>
+                        <li><strong>Spine:</strong> Detects vertical centerline activation</li>
+                        <li><strong>Belt:</strong> Detects horizontal middle activation</li>
+                    </ul>
+
+                    <p style="margin-top: 20px;">
+                        The network learns that digit 0 should strongly activate the "Frame" detector while avoiding activation of "Spine" and "Belt" detectors (which would indicate filled regions).
+                    </p>
+                `
+            },
+            {
+                title: "Mechanistic Trace Example",
+                content: `
+                    <h2>Mechanistic Trace for Digit 0</h2>
+
+                    <img src="../demo/dashboard_digit_0.png" alt="Mechanistic trace for digit 0" style="max-width: 100%;">
+
+                    <p style="font-size: 0.95em; color: #666; margin-top: 15px;">
+                        The dashboard shows how Layer 1 neurons detect basic patterns (Frame, Spine, Belt), and Layer 2 neurons combine them with learned weights to produce the final digit 0 logit.
+                    </p>
+                `
+            },
+            {
+                title: "Robustness Analysis",
+                content: `
+                    <h2>Robustness to Perturbations</h2>
+
+                    <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
+
+                    <img src="../demo/epsilon_robustness_full.png" alt="Robustness vs Perturbation Size" style="max-width: 100%;">
+
+                    <h3 style="margin-top: 20px;">Key Findings</h3>
+                    <ul>
+                        <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
+                        <li>Different digits show varying sensitivity to perturbations</li>
+                        <li>Digit 1 remains highly robust even at ε = 0.02</li>
+                        <li>Digit 4 degrades more quickly with larger perturbations</li>
+                        <li>The LP itself appears to be a good classifier for MNIST</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Applications & Impact",
+                content: `
+                    <h2>Why This Matters</h2>
+
+                    <h3>Formal Verification</h3>
+                    <p>The polytope representation enables us to:</p>
+                    <ul>
+                        <li>Prove properties about network behavior</li>
+                        <li>Guarantee robustness within specified bounds</li>
+                        <li>Identify potential failure modes before deployment</li>
+                    </ul>
+
+                    <h3>Interpretability</h3>
+                    <p>Beyond verification, we gain deep insights:</p>
+                    <ul>
+                        <li>Understand what each neuron detects</li>
+                        <li>Trace how features compose across layers</li>
+                        <li>Debug and improve network architectures</li>
+                    </ul>
+
+                    <h3>Scalability Challenges</h3>
+                    <p>Current limitations:</p>
+                    <ul>
+                        <li>Polytope complexity grows with network size</li>
+                        <li>LP solving becomes expensive for large networks</li>
+                        <li>Future work: approximate methods for larger models</li>
+                    </ul>
+                `
+            },
+            {
+                title: "Thank You",
+                content: `
+                    <div class="center-content">
+                        <h1>Thank You!</h1>
+                        <p class="subtitle">Questions?</p>
+                        <div style="margin-top: 40px; text-align: center;">
+                            <h3>Key Takeaways</h3>
+                            <ul style="display: inline-block; text-align: left; margin-top: 20px;">
+                                <li>Polytopes enable formal verification of neural networks</li>
+                                <li>Small networks can be fully interpretable</li>
+                                <li>Linear programming provides both verification and insights</li>
+                                <li>Mechanistic interpretability reveals how features compose</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // ============================================
+        // SLIDESHOW LOGIC - NO NEED TO EDIT BELOW
+        // ============================================
+
+        let currentSlide = 0;
+
+        function renderSlides() {
+            const container = document.getElementById('slides');
+            container.innerHTML = slides.map((slide, index) => `
+                <div class="slide ${index === 0 ? 'active' : ''}" id="slide-${index}">
+                    ${slide.content}
+                </div>
+            `).join('');
+        }
+
+        function updateSlideNumber() {
+            document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${slides.length}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slides.length - 1;
+        }
+
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide < slides.length) {
+                document.getElementById(`slide-${currentSlide}`).classList.remove('active');
+                currentSlide = newSlide;
+                document.getElementById(`slide-${currentSlide}`).classList.add('active');
+                updateSlideNumber();
+
+                // Initialize demo if on demo slide
+                if (currentSlide === 6) { // Interactive Demo slide
+                    setTimeout(initializeDemo, 100);
+                }
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        renderSlides();
+        updateSlideNumber();
+
+        // ============================================
+        // NEURAL NETWORK DEMO CODE
+        // ============================================
+
+        function gelu(x) {
+            const sqrt2pi = Math.sqrt(2 / Math.PI);
+            return 0.5 * x * (1 + Math.tanh(sqrt2pi * (x + 0.044715 * x * x * x)));
+        }
+
+        function matmul(a, W) {
+            const result = new Array(W[0].length).fill(0);
+            for (let j = 0; j < W[0].length; j++) {
+                for (let i = 0; i < a.length; i++) {
+                    result[j] += a[i] * W[i][j];
+                }
+            }
+            return result;
+        }
+
+        function addBias(a, b) {
+            return a.map((val, i) => val + b[i]);
+        }
+
+        function applyGelu(a) {
+            return a.map(gelu);
+        }
+
+        function normalizeActivation(val) {
+            return 1 / (1 + Math.exp(-val));
+        }
+
+        let weights = null;
+        let mnistSamples = null;
+        let currentIndex = 0;
+        let activations = null;
+        let neuronPositions = [];
+        let demoInitialized = false;
+        let highlightedPixel = -1;
+
+        function forwardPass(input) {
+            const a1 = addBias(matmul(input, weights.W1), weights.b1);
+            const z1 = applyGelu(a1);
+            const a2 = addBias(matmul(z1, weights.W2), weights.b2);
+            const z2 = applyGelu(a2);
+            const a3 = addBias(matmul(z2, weights.W3), weights.b3);
+            return { input, a1, z1, a2, z2, a3 };
+        }
+
+        function drawNetwork() {
+            const canvas = document.getElementById('networkCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const layerX = [80, 280, 500, 720];
+            const layerSizes = [49, 3, 3, 10];
+            const layerNames = ['Input\n(7×7)', 'Hidden 1\n(GELU)', 'Hidden 2\n(GELU)', 'Output\n(Logits)'];
+
+            neuronPositions = [];
+
+            for (let layer = 0; layer < 4; layer++) {
+                neuronPositions[layer] = [];
+                const count = layerSizes[layer];
+                const spacing = Math.min(350 / count, 30);
+                const startY = 225 - (count - 1) * spacing / 2;
+
+                for (let i = 0; i < count; i++) {
+                    neuronPositions[layer].push({
+                        x: layerX[layer],
+                        y: startY + i * spacing
+                    });
+                }
+            }
+
+            // Draw edges
+            const weightMatrices = [weights.W1, weights.W2, weights.W3];
+            for (let layer = 0; layer < 3; layer++) {
+                const W = weightMatrices[layer];
+                for (let i = 0; i < W.length; i++) {
+                    for (let j = 0; j < W[i].length; j++) {
+                        const weight = W[i][j];
+                        const from = neuronPositions[layer][i];
+                        const to = neuronPositions[layer + 1][j];
+
+                        ctx.strokeStyle = weight > 0 ? 'rgba(0, 100, 255, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+                        ctx.lineWidth = Math.min(Math.abs(weight) * 2, 2);
+
+                        ctx.beginPath();
+                        ctx.moveTo(from.x, from.y);
+                        ctx.lineTo(to.x, to.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw nodes
+            const acts = [activations.input, activations.z1, activations.z2, activations.a3];
+
+            for (let layer = 0; layer < 4; layer++) {
+                const values = acts[layer];
+                for (let i = 0; i < neuronPositions[layer].length; i++) {
+                    const pos = neuronPositions[layer][i];
+                    const val = values[i];
+                    const intensity = layer === 0 ? val : normalizeActivation(val);
+
+                    const r = 255;
+                    const g = Math.floor(255 - intensity * 200);
+                    const b = Math.floor(224 - intensity * 224);
+
+                    const radius = layerSizes[layer] > 10 ? 4 : (layerSizes[layer] > 5 ? 8 : 12);
+
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1.5;
+
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Layer labels
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(layerNames[layer].split('\n')[0], layerX[layer], 25);
+                ctx.fillText(layerNames[layer].split('\n')[1], layerX[layer], 38);
+            }
+        }
+
+        function drawDigit(digit, highlightPixelIdx = -1) {
+            const digitCanvas = document.getElementById('digitCanvas');
+            if (!digitCanvas) return;
+            const digitCtx = digitCanvas.getContext('2d');
+
+            const imgData = digitCtx.createImageData(7, 7);
+            for (let i = 0; i < 49; i++) {
+                const val = Math.floor(digit[i] * 255);
+                imgData.data[i * 4] = val;
+                imgData.data[i * 4 + 1] = val;
+                imgData.data[i * 4 + 2] = val;
+                imgData.data[i * 4 + 3] = 255;
+            }
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 7;
+            tempCanvas.height = 7;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imgData, 0, 0);
+
+            digitCtx.clearRect(0, 0, 140, 140);
+            digitCtx.imageSmoothingEnabled = false;
+            digitCtx.drawImage(tempCanvas, 0, 0, 7, 7, 0, 0, 140, 140);
+
+            // Draw highlight if a pixel is selected
+            if (highlightPixelIdx >= 0) {
+                const pixelSize = 20; // 140 / 7
+                const row = Math.floor(highlightPixelIdx / 7);
+                const col = highlightPixelIdx % 7;
+
+                digitCtx.strokeStyle = '#00ff00';
+                digitCtx.lineWidth = 3;
+                digitCtx.strokeRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+
+                // Add a subtle fill
+                digitCtx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                digitCtx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+            }
+        }
+
+        function updateInfo(trueLabel) {
+            const infoPanel = document.getElementById('infoPanel');
+            if (!infoPanel) return;
+
+            const predicted = activations.a3.indexOf(Math.max(...activations.a3));
+            const confidence = activations.a3[predicted];
+
+            let info = `=== CURRENT DIGIT ===\n`;
+            info += `True Label: ${trueLabel}\n`;
+            info += `Predicted: ${predicted} ✓\n`;
+            info += `Confidence: ${confidence.toFixed(3)}\n\n`;
+
+            info += `=== OUTPUT LOGITS ===\n`;
+            for (let i = 0; i < 10; i++) {
+                const marker = i === predicted ? '→ ' : '  ';
+                info += `${marker}${i}: ${activations.a3[i].toFixed(3)}\n`;
+            }
+
+            infoPanel.textContent = info;
+        }
+
+        function update() {
+            if (!weights || !mnistSamples) return;
+
+            const input = mnistSamples.samples[currentIndex];
+            const trueLabel = mnistSamples.labels[currentIndex];
+            activations = forwardPass(input);
+
+            const digitLabel = document.getElementById('digitLabel');
+            if (digitLabel) digitLabel.textContent = trueLabel;
+
+            drawDigit(input, highlightedPixel);
+            drawNetwork();
+            updateInfo(trueLabel);
+        }
+
+        function nextDigit() {
+            if (!mnistSamples) return;
+            currentIndex = (currentIndex + 1) % mnistSamples.samples.length;
+            update();
+        }
+
+        function prevDigit() {
+            if (!mnistSamples) return;
+            currentIndex = (currentIndex - 1 + mnistSamples.samples.length) % mnistSamples.samples.length;
+            update();
+        }
+
+        let listenersSetup = false;
+
+        function initializeDemo() {
+            if (demoInitialized) {
+                if (!listenersSetup) {
+                    setupEventListeners();
+                }
+                update();
+                return;
+            }
+
+            Promise.all([
+                fetch('../demo/weights.json').then(r => r.json()),
+                fetch('../demo/mnist_samples.json').then(r => r.json())
+            ]).then(([weightsData, samplesData]) => {
+                weights = weightsData;
+                mnistSamples = samplesData;
+                demoInitialized = true;
+                setupEventListeners();
+                update();
+            }).catch(err => {
+                console.error('Error loading demo data:', err);
+                const infoPanel = document.getElementById('infoPanel');
+                if (infoPanel) infoPanel.textContent = 'Error loading data: ' + err;
+            });
+        }
+
+        function setupEventListeners() {
+            const canvas = document.getElementById('networkCanvas');
+            if (!canvas || listenersSetup) return;
+
+            listenersSetup = true;
+
+            // Add click listener
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Check if click is on a hidden neuron (layers 1 or 2)
+                for (let layer = 1; layer <= 2; layer++) {
+                    for (let i = 0; i < neuronPositions[layer].length; i++) {
+                        const pos = neuronPositions[layer][i];
+                        const radius = 8;
+                        const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+
+                        if (dist < radius * 1.5) {
+                            showNeuronModal(layer, i);
+                            return;
+                        }
+                    }
+                }
+            });
+
+            // Add mousemove listener for tooltip
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                let found = false;
+                for (let layer = 0; layer < neuronPositions.length; layer++) {
+                    for (let i = 0; i < neuronPositions[layer].length; i++) {
+                        const pos = neuronPositions[layer][i];
+                        const layerSizes = [49, 3, 3, 10];
+                        const radius = layerSizes[layer] > 10 ? 4 : (layerSizes[layer] > 5 ? 8 : 12);
+                        const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+
+                        if (dist < radius * 1.5) {
+                            showTooltip(e.clientX, e.clientY, layer, i);
+                            found = true;
+
+                            // Highlight pixel if hovering over input layer
+                            if (layer === 0 && highlightedPixel !== i) {
+                                highlightedPixel = i;
+                                const input = mnistSamples.samples[currentIndex];
+                                drawDigit(input, highlightedPixel);
+                            }
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+
+                if (!found) {
+                    document.getElementById('tooltip').style.display = 'none';
+                    // Remove highlight when not hovering over any neuron
+                    if (highlightedPixel !== -1) {
+                        highlightedPixel = -1;
+                        const input = mnistSamples.samples[currentIndex];
+                        drawDigit(input, -1);
+                    }
+                }
+            });
+        }
+
+        function showTooltip(x, y, layer, idx) {
+            const tooltip = document.getElementById('tooltip');
+            if (!tooltip || !activations) return;
+
+            const epsilon = 0.01;
+            const layerNames = ['Input', 'Hidden1', 'Hidden2', 'Output'];
+            let text = `=== ${layerNames[layer]} Layer ===\nNeuron Index: ${idx}\n\n`;
+
+            if (layer === 0) {
+                text += `Variable: x0[${idx}]\n`;
+                text += `Pixel position: (${Math.floor(idx/7)}, ${idx%7})\n`;
+                text += `Value: ${activations.input[idx].toFixed(4)}\n\n`;
+                text += `Polytope Constraints:\n`;
+                const lb = Math.max(0, activations.input[idx] - epsilon).toFixed(4);
+                const ub = Math.min(1, activations.input[idx] + epsilon).toFixed(4);
+                text += `  ${lb} ≤ x0[${idx}] ≤ ${ub}`;
+            } else if (layer === 1) {
+                const neuronName = ['Frame', 'Spine', 'Belt'][idx];
+                text += `Name: "${neuronName}"\n`;
+                text += `Pre-activation: a1[${idx}]\n`;
+                text += `Post-activation: z1[${idx}]\n\n`;
+                text += `Current Values:\n`;
+                text += `  a1[${idx}] = ${activations.a1[idx].toFixed(4)}\n`;
+                text += `  z1[${idx}] = ${activations.z1[idx].toFixed(4)}\n\n`;
+                text += `Click to see activation patterns!`;
+            } else if (layer === 2) {
+                text += `Pre-activation: a2[${idx}]\n`;
+                text += `Post-activation: z2[${idx}]\n\n`;
+                text += `Current Values:\n`;
+                text += `  a2[${idx}] = ${activations.a2[idx].toFixed(4)}\n`;
+                text += `  z2[${idx}] = ${activations.z2[idx].toFixed(4)}\n\n`;
+                text += `Click to see activation patterns!`;
+            } else {
+                text += `Variable: a3[${idx}]\n`;
+                text += `Output logit for digit ${idx}\n\n`;
+                text += `Current Value: ${activations.a3[idx].toFixed(4)}`;
+            }
+
+            tooltip.textContent = text;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (x + 15) + 'px';
+            tooltip.style.top = (y - 15) + 'px';
+        }
+
+        function showNeuronModal(layer, idx) {
+            const modal = document.getElementById('neuronModal');
+            const modalBody = document.getElementById('modalBody');
+            if (!modal || !modalBody) return;
+
+            const neuronNames = [
+                ['Frame', 'Spine', 'Belt'],  // L1 neurons
+                ['N0', 'N1', 'N2']           // L2 neurons
+            ];
+
+            const title = `Layer ${layer} Neuron ${idx}: ${neuronNames[layer - 1][idx]}`;
+            const imagePath = `../demo/neuron_L${layer}_N${idx}.png`;
+
+            modalBody.innerHTML = `
+                <h2>${title}</h2>
+                <p>This neuron's activation pattern across different digits:</p>
+                <img src="${imagePath}" alt="${title}" style="width: 100%; max-width: 1000px;">
+                <p style="margin-top: 15px; color: #666; font-size: 0.95em;">
+                    The visualization shows: (left) histograms of activation values for specific digits,
+                    (center) mean activation by digit class, and (right) the input weight pattern showing
+                    which pixels most influence this neuron.
+                </p>
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        function closeNeuronModal() {
+            const modal = document.getElementById('neuronModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('neuronModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

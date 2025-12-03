@@ -359,6 +359,31 @@
                 `
             },
             {
+                title: "Related Work",
+                content: `
+                    <h2>Related Work</h2>
+
+                    <h3>Interpretability is Complex</h3>
+                    <div style="background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0;">
+                        <p><strong>The Mythos of Model Interpretability</strong> (Lipton '17)</p>
+                        <ul>
+                            <li>Many competing definitions for interpretability</li>
+                            <li>Just because a model is linear, does not make it interpretable...</li>
+                        </ul>
+                    </div>
+
+                    <h3>Interpreting Optimization Problems</h3>
+                    <p>Nevertheless in the literature they have succeeded in interpreting the relationships between variables in LPs and MIPs such as in...</p>
+                    <ul style="margin-top: 15px;">
+                        <li><strong>The Voice of Optimization</strong> (Bertsimas, Stellato '20)</li>
+                        <li><strong>Machines Explaining Linear Programs</strong> (Steinmann et al. '22)</li>
+                    </ul>
+
+                    <h3>Previous Work on Neural Network Interpretability</h3>
+                    <p>Out of scope!</p>
+                `
+            },
+            {
                 title: "Overview",
                 content: `
                     <h2>Project Overview</h2>
@@ -1044,22 +1069,40 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                 const neuronName = ['Frame', 'Spine', 'Belt'][idx];
                 text += `Name: "${neuronName}"\n`;
                 text += `Pre-activation: a1[${idx}]\n`;
-                text += `Post-activation: z1[${idx}]\n\n`;
+                text += `Post-activation: z1[${idx}]\n`;
+                text += `Activation: GELU(a1[${idx}])\n\n`;
+                text += `Math:\n`;
+                text += `  a1[${idx}] = Σ W1[i,${idx}]·x0[i] + b1[${idx}]\n`;
+                text += `  z1[${idx}] = GELU(a1[${idx}])\n\n`;
                 text += `Current Values:\n`;
                 text += `  a1[${idx}] = ${activations.a1[idx].toFixed(4)}\n`;
                 text += `  z1[${idx}] = ${activations.z1[idx].toFixed(4)}\n\n`;
+                text += `Polytope Constraints:\n`;
+                text += `  z1[${idx}] ≥ αL·a1[${idx}] + βL  (lower)\n`;
+                text += `  z1[${idx}] ≤ αU·a1[${idx}] + βU  (upper)\n\n`;
                 text += `Click to see activation patterns!`;
             } else if (layer === 2) {
                 text += `Pre-activation: a2[${idx}]\n`;
-                text += `Post-activation: z2[${idx}]\n\n`;
+                text += `Post-activation: z2[${idx}]\n`;
+                text += `Activation: GELU(a2[${idx}])\n\n`;
+                text += `Math:\n`;
+                text += `  a2[${idx}] = Σ W2[i,${idx}]·z1[i] + b2[${idx}]\n`;
+                text += `  z2[${idx}] = GELU(a2[${idx}])\n\n`;
                 text += `Current Values:\n`;
                 text += `  a2[${idx}] = ${activations.a2[idx].toFixed(4)}\n`;
                 text += `  z2[${idx}] = ${activations.z2[idx].toFixed(4)}\n\n`;
+                text += `Polytope Constraints:\n`;
+                text += `  z2[${idx}] ≥ αL·a2[${idx}] + βL  (lower)\n`;
+                text += `  z2[${idx}] ≤ αU·a2[${idx}] + βU  (upper)\n\n`;
                 text += `Click to see activation patterns!`;
             } else {
                 text += `Variable: a3[${idx}]\n`;
-                text += `Output logit for digit ${idx}\n\n`;
-                text += `Current Value: ${activations.a3[idx].toFixed(4)}`;
+                text += `Meaning: Output logit for digit ${idx}\n\n`;
+                text += `Math:\n`;
+                text += `  a3[${idx}] = Σ W3[i,${idx}]·z2[i] + b3[${idx}]\n\n`;
+                text += `Current Value: ${activations.a3[idx].toFixed(4)}\n\n`;
+                text += `Polytope: No constraints\n`;
+                text += `(Output logits are unbounded)`;
             }
 
             tooltip.textContent = text;

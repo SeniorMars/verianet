@@ -611,10 +611,17 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                 `
             },
             {
-                title: "Constraint Signatures",
+                title: "Constraint Signatures Experiment",
                 content: `
                     <h2>Constraint Signatures</h2>
-
+                    <ul>
+                    <li>For each digit, we take a real image, allow an ε-ball of perturbations, and use an LP to maximize that digit’s logit inside the polytope.</li>
+                    <li>At the optimum we record which inequalities are tight; this gives a “constraint signature” for that digit.</li>
+                    <li>Red heatmaps: pixels that frequently hit their lower bound (the network prefers less ink there).</li>
+                    <li>Blue heatmaps: pixels that frequently hit their upper bound (the network prefers more ink there).</li>
+                    <li>Bar plots: how often each GELU envelope in layers 1 and 2 is active for that digit.</li>
+                    <li>Experiment: Each digit ends up with a distinctive pattern that we can read as a rule about where the network expects ink or blank space.</li>
+                    </ul>
                     <img src="../constraint_signatures.png" alt="Constraint Signatures" style="max-width: 100%;">
                 `
             },

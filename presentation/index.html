@@ -223,6 +223,34 @@
             font-size: 1.2em;
             text-align: center;
         }
+        .latex-style {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 25px;
+            margin: 20px 0;
+            font-family: 'Latin Modern Math', 'Computer Modern', 'Times New Roman', serif;
+            font-size: 1.1em;
+            line-height: 2.2;
+        }
+        .latex-align {
+            display: table;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .latex-row {
+            display: table-row;
+        }
+        .latex-label {
+            display: table-cell;
+            text-align: right;
+            padding-right: 15px;
+            font-style: italic;
+        }
+        .latex-content {
+            display: table-cell;
+            text-align: left;
+            padding-left: 10px;
+        }
         .tooltip {
             position: fixed;
             background: rgba(0, 0, 0, 0.9);
@@ -316,11 +344,18 @@
                 title: "Motivation",
                 content: `
                     <h2>Motivation</h2>
-                    <p>Neural networks are famously known to be black boxes</p>
-                    <p style="margin-top: 20px;"><strong>News headline: the New Yorker - Why the Godfather of A.I. Fears What He's Built</strong></p>
-                    <p style="font-style: italic; color: #555;">Geoffrey Hinton has spent a lifetime teaching computers to learn. Now he worries that artificial brains are better than ours.</p>
-                    <p style="margin-top: 30px;">Our methods were for simple feedforward neural net</p>
-                    <p>We don't know whether our methods will scale!</p>
+
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin: 30px 0; text-align: center;">
+                        <p style="font-size: 1.5em; color: white; margin: 0;">Neural networks are famously known to be <strong>black boxes</strong></p>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <img src="../new-yorker-motivation.jpg" alt="New Yorker Article - Why the Godfather of A.I. Fears What He's Built" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    </div>
+
+                    <div style="background: #fff3cd; border-left: 6px solid #ffc107; padding: 25px; margin-top: 40px; border-radius: 6px;">
+                        <p style="font-size: 1.15em; color: #333; margin-bottom: 10px;">To address this we focused on a case study: simple feedforward neural networks.</p>
+                    </div>
                 `
             },
             {
@@ -332,6 +367,7 @@
                         <li><strong>Build</strong> a tiny MNIST digit classifier (49 → 3 → 3 → 10 neurons)</li>
                         <li><strong>Encode</strong> network behavior using polytope representations</li>
                         <li><strong>Understand</strong> what each neuron learns by building visualizations</li>
+                        <li><strong>Interpret</strong> system-level behavior through optimization</li>
                     </ul>
                     <h3 style="margin-top: 30px;">Key Innovation</h3>
                     <p>Whereas it is fairly common to use linear programming to formally verify properties about network behavior, we show it is also a powerful tool for <strong>discovering</strong> properties.</p>
@@ -353,7 +389,6 @@
                             <li><strong>Post-processing:</strong> Softmax for probabilities</li>
                         </ul>
                     </div>
-Analyzing constraints per LP
                     <h3>Why GELU?</h3>
                     <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as we can tightly approximate any function with linear envelopes. </p>
 
@@ -493,6 +528,25 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                 `
             },
             {
+                title: "Robustness Analysis",
+                content: `
+                    <h2>Key Finding: Linear Classifier</h2>
+
+                    <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
+
+                    <img src="../demo/epsilon_robustness_full.png" alt="Robustness vs Perturbation Size" style="max-width: 100%;">
+
+                    <h3 style="margin-top: 20px;">Key Findings</h3>
+                    <ul>
+                        <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
+                        <li>Different digits show varying sensitivity to perturbations</li>
+                        <li>Digit 1 remains highly robust even at ε = 0.02</li>
+                        <li>Digit 4 degrades more quickly with larger perturbations</li>
+                        <li>The LP itself appears to be a good classifier for MNIST</li>
+                    </ul>
+                `
+            },
+            {
                 title: "Mechanistic Interpretability",
                 content: `
                     <h2>Understanding What Neurons Learn</h2>
@@ -532,51 +586,62 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                 `
             },
             {
-                title: "Robustness Analysis",
+                title: "Constraint Signatures",
                 content: `
-                    <h2>Robustness to Perturbations</h2>
+                    <h2>Constraint Signatures</h2>
 
-                    <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
-
-                    <img src="../demo/epsilon_robustness_full.png" alt="Robustness vs Perturbation Size" style="max-width: 100%;">
-
-                    <h3 style="margin-top: 20px;">Key Findings</h3>
-                    <ul>
-                        <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
-                        <li>Different digits show varying sensitivity to perturbations</li>
-                        <li>Digit 1 remains highly robust even at ε = 0.02</li>
-                        <li>Digit 4 degrades more quickly with larger perturbations</li>
-                        <li>The LP itself appears to be a good classifier for MNIST</li>
-                    </ul>
+                    <img src="../constraint_signatures.png" alt="Constraint Signatures" style="max-width: 100%;">
                 `
             },
             {
-                title: "Applications & Impact",
+                title: "System-Level Behavior",
                 content: `
-                    <h2>Why This Matters</h2>
+                    <h2>System-Level Behavior</h2>
 
-                    <h3>Formal Verification</h3>
-                    <p>The polytope representation enables us to:</p>
+                    <h3>Formulation</h3>
+                    <div class="latex-style">
+                        <div class="latex-align">
+                            <div class="latex-row">
+                                <div class="latex-label">max</div>
+                                <div class="latex-content"><i>a</i>₃[true class] − <i>t</i></div>
+                            </div>
+                            <div class="latex-row">
+                                <div class="latex-label">s.t.</div>
+                                <div class="latex-content"><i>t</i> ≥ <i>a</i>₃[<i>k</i>]&nbsp;&nbsp;&nbsp;&nbsp;∀ <i>k</i> ≠ true class</div>
+                            </div>
+                            <div class="latex-row">
+                                <div class="latex-label"></div>
+                                <div class="latex-content">all polytope constraints hold</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p><strong>Seeks to maximize distance between correct logit and largest other logit</strong></p>
+                    <p>Starts from best performing version of each digit and can deviate by ε amount</p>
+                    <p>Uses ℓ₁ regularization</p>
+
+                    <img src="../optimized_digits.png" alt="Optimized Digits" style="max-width: 100%; margin-top: 20px;">
+                `
+            },
+            {
+                title: "Limitations & Next Steps",
+                content: `
+                    <h2>Limitations & Next Steps</h2>
+
+                    <h3>Limitations & Speculation</h3>
+                    <p>We don't know whether our methods will scale to larger networks!</p>
                     <ul>
-                        <li>Prove properties about network behavior</li>
-                        <li>Guarantee robustness within specified bounds</li>
-                        <li>Identify potential failure modes before deployment</li>
+                        <li>Too many hidden neurons, possibly representing multiple concepts</li>
+                        <li>For larger networks, the system-level analysis may be more useful!</li>
+                        <li>Increased computational cost for LP solving</li>
                     </ul>
 
-                    <h3>Interpretability</h3>
-                    <p>Beyond verification, we gain deep insights:</p>
+                    <h3>Next Steps</h3>
                     <ul>
-                        <li>Understand what each neuron detects</li>
-                        <li>Trace how features compose across layers</li>
-                        <li>Debug and improve network architectures</li>
-                    </ul>
-
-                    <h3>Scalability Challenges</h3>
-                    <p>Current limitations:</p>
-                    <ul>
-                        <li>Polytope complexity grows with network size</li>
-                        <li>LP solving becomes expensive for large networks</li>
-                        <li>Future work: approximate methods for larger models</li>
+                        <li>Test other activation functions</li>
+                        <li>Beyond feedforward: CNNs, RNNs, or Transformer models?</li>
+                        <li>Neural network training as a way to create linear classification models</li>
+                        <li>How can we use interpretability results?</li>
                     </ul>
                 `
             },

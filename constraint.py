@@ -428,7 +428,7 @@ def visualize_signatures(results: Dict[int, Dict], save_path: str = None):
         # Row 0: Pixels pushing lower
         ax = plt.subplot(4, 10, digit + 1)
         img = res['input_lower_freq'].reshape(7, 7)
-        im = ax.imshow(img, cmap='Blues', vmin=0, vmax=1)
+        im = ax.imshow(img, cmap='Reds', vmin=0, vmax=1)
         ax.set_title(f'{digit}', fontsize=12, fontweight='bold')
         ax.axis('off')
         if digit == 0:
@@ -437,7 +437,7 @@ def visualize_signatures(results: Dict[int, Dict], save_path: str = None):
         # Row 1: Pixels pushing upper
         ax = plt.subplot(4, 10, 10 + digit + 1)
         img = res['input_upper_freq'].reshape(7, 7)
-        ax.imshow(img, cmap='Reds', vmin=0, vmax=1)
+        ax.imshow(img, cmap='Blues', vmin=0, vmax=1)
         ax.axis('off')
         if digit == 0:
             ax.set_ylabel('Input→Upper\n(want MORE ink)', fontsize=9)

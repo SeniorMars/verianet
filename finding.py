@@ -1,7 +1,10 @@
 import numpy as np
 import pyomo.environ as pyo
 from typing import Optional, Dict, Tuple
-import matplotlib.pyplot as plt  # <- fixed
+import matplotlib.pyplot as plt
+
+from tensorflow.keras.datasets import mnist
+import tensorflow as tf
 
 from basic import gelu, tight_gelu_envelope, ibp_activation
 from helper import PyomoPolyAnalyzer, ibp_affine_keras
@@ -9,6 +12,10 @@ from helper import PyomoPolyAnalyzer, ibp_affine_keras
 data = np.load("verysmallnn_weights.npz")
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
+
+# ---------- Load data (real MNIST, downsampled to 7×7) ----------
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_test = tf.image.resize(x_test[..., tf.newaxis], [7, 7]).numpy().squeeze() / 255.0
 
 
 def forward_logits(x: np.ndarray) -> np.ndarray:
@@ -63,15 +70,13 @@ def solve_margin(
     obj = model.a3[target_digit] - model.a3[original_digit]
 
     print(f"    [{step_desc}] ε={epsilon:.4f}: solving LP...", end="", flush=True)
-
     val, _ = analyzer.optimize_with_timelimit(obj, sense="max", time_limit=timelimit)
-
     print(f" val={val}", flush=True)
 
     if val is None:
         return False, None, None
 
-    success = val > margin_target
+    success = val >= margin_target
     if success:
         return True, val, analyzer
     else:
@@ -87,118 +92,186 @@ def find_minimal_counterfactual(
     timelimit: Optional[float] = None,
 ) -> Optional[Dict]:
     """
-    Two-phase search for smallest ε where we can achieve:
-        logit[target] ≥ logit[original] + margin.
+    Two-phase search for smallest ε where we can achieve, in the TRUE network:
+        logit[target] >= logit[original] + margin.
 
-    1) Coarse scan over a grid of ε values to find [ε_low, ε_high] bracket.
-    2) Binary search inside that bracket.
+    We use the LP on the abstract polytope to propose a candidate point x,
+    then check that inequality on the real GELU network. We DO NOT require
+    that the argmax label is target_digit (we just show what it is).
     """
     x0_flat = x0.flatten()
     orig_logits = forward_logits(x0)
-    pred = int(np.argmax(orig_logits))
+    pred_orig = int(np.argmax(orig_logits))
 
     print(
-        f"  Original pred={pred}, "
+        f"  Original pred={pred_orig}, "
         f"logit[{original_digit}]={orig_logits[original_digit]:.2f}, "
         f"logit[{target_digit}]={orig_logits[target_digit]:.2f}"
     )
 
-    # If the network already prefers target with margin, ε = 0 is enough.
+    # If the true network already satisfies the margin at ε = 0, we're done.
     current_margin = orig_logits[target_digit] - orig_logits[original_digit]
-    if current_margin > margin:
-        print("  Already flipped at ε=0 (network already prefers target).")
+    if current_margin >= margin:
+        print("  Already satisfies margin at ε=0.")
         return {
             "epsilon": 0.0,
             "image": x0,
             "delta": np.zeros_like(x0),
             "original_logits": orig_logits,
             "cf_logits": orig_logits,
-            "predicted": pred,
+            "predicted": pred_orig,
             "margin": current_margin,
         }
 
-    # Use a small set of ε candidates to find first success.
-    coarse_epsilons = np.linspace(0.01, max_epsilon, 6)
+    # Phase 1: coarse scan to get a bracket [ε_low, ε_high]
+    coarse_epsilons = np.linspace(0.01, max_epsilon, 8)
     bracket_low = 0.0
     bracket_high = None
-
-    print("Phase 1: coarse scan")
-    for eps in coarse_epsilons:
-        ok, val, _ = solve_margin(
-            x0_flat, eps, original_digit, target_digit,
-            margin_target=margin,
-            step_desc=f"coarse",
-            timelimit=timelimit,
-        )
-        if ok:
-            bracket_high = eps
-            break
-        else:
-            bracket_low = eps
-
-    if bracket_high is None:
-        print(f"No ε≤{max_epsilon} where LP margin> {margin}.")
-        return None
-
-    print(f"Found bracket: low={bracket_low:.4f}, high={bracket_high:.4f}")
-
-    best_eps = bracket_high
     best_analyzer: Optional[PyomoPolyAnalyzer] = None
 
-    print("Phase 2: binary search")
+    for eps in coarse_epsilons:
+        ok, val, analyzer = solve_margin(
+            x0_flat,
+            eps,
+            original_digit,
+            target_digit,
+            margin_target=margin,
+            step_desc="coarse",
+            timelimit=timelimit,
+        )
+        if ok and analyzer is not None:
+            # Check this candidate in the true network
+            model = analyzer.model
+            cf_flat = np.array([pyo.value(model.x0[i]) for i in range(49)])
+            cf = cf_flat.reshape(7, 7)
+            cf_logits = forward_logits(cf)
+            margin_cf = cf_logits[target_digit] - cf_logits[original_digit]
+            pred_cf = int(np.argmax(cf_logits))
+
+            print(
+                f"    [coarse] ε={eps:.4f}: LP ok (val={val:.3f}), "
+                f"true margin={margin_cf:.3f}, pred_cf={pred_cf}"
+            )
+
+            if margin_cf >= margin:
+                bracket_low = bracket_low
+                bracket_high = eps
+                best_analyzer = analyzer
+                break
+
+        bracket_low = eps
+
+    if bracket_high is None:
+        print(f"  No ε ≤ {max_epsilon} where TRUE margin ≥ {margin}.")
+        return None
+
+    print(f"Found TRUE bracket: low={bracket_low:.4f}, high={bracket_high:.4f}")
+
+    # Phase 2: binary search using the TRUE margin as success criterion
+    best_eps = bracket_high
+    best_cf = None
+    best_cf_logits = None
+    best_margin = None
+    best_pred = None
+
     for step in range(n_binary_steps):
         eps_mid = 0.5 * (bracket_low + bracket_high)
         ok, val, analyzer = solve_margin(
-            x0_flat, eps_mid, original_digit, target_digit,
+            x0_flat,
+            eps_mid,
+            original_digit,
+            target_digit,
             margin_target=margin,
             step_desc=f"binary step {step}",
             timelimit=timelimit,
         )
 
-        if ok:
-            # Success → try smaller epsilon
+        if not ok or analyzer is None:
+            # LP couldn't even get the relaxed margin; need bigger ε
+            bracket_low = eps_mid
+            continue
+
+        # Pull out concrete candidate and check in the true network
+        model = analyzer.model
+        cf_flat = np.array([pyo.value(model.x0[i]) for i in range(49)])
+        cf = cf_flat.reshape(7, 7)
+        cf_logits = forward_logits(cf)
+        margin_cf = cf_logits[target_digit] - cf_logits[original_digit]
+        pred_cf = int(np.argmax(cf_logits))
+
+        print(
+            f"    [binary] ε={eps_mid:.4f}: LP val={val:.3f}, "
+            f"true margin={margin_cf:.3f}, pred_cf={pred_cf}"
+        )
+
+        if margin_cf >= margin:
+            # TRUE success → try smaller ε
             best_eps = eps_mid
-            best_analyzer = analyzer
+            best_cf = cf
+            best_cf_logits = cf_logits
+            best_margin = margin_cf
+            best_pred = pred_cf
             bracket_high = eps_mid
         else:
-            # Failure → need larger epsilon
+            # TRUE failure → need bigger ε
             bracket_low = eps_mid
 
-    # If we never kept an analyzer from success, re-solve once at best_eps to get one.
-    if best_analyzer is None:
-        ok, val, best_analyzer = solve_margin(
-            x0_flat, best_eps, original_digit, target_digit,
-            margin_target=margin,
-            step_desc="final",
-            timelimit=timelimit,
-        )
-        if not ok or best_analyzer is None:
-            print("  Unexpected failure when re-solving at best ε.")
-            return None
-
-    # Extract counterfactual from best_analyzer
-    model = best_analyzer.model
-    cf_flat = np.array([pyo.value(model.x0[i]) for i in range(49)])
-    cf = cf_flat.reshape(7, 7)
-    cf_logits = forward_logits(cf)
-    pred_cf = int(np.argmax(cf_logits))
-    margin_cf = cf_logits[target_digit] - cf_logits[original_digit]
+    if best_cf is None:
+        print("  LP often said 'ok' but TRUE network never reached the margin.")
+        return None
 
     return {
         "epsilon": best_eps,
-        "image": cf,
-        "delta": cf - x0,
+        "image": best_cf,
+        "delta": best_cf - x0,
         "original_logits": orig_logits,
-        "cf_logits": cf_logits,
-        "predicted": pred_cf,
-        "margin": margin_cf,
+        "cf_logits": best_cf_logits,
+        "predicted": best_pred,
+        "margin": best_margin,
     }
+
+def find_cf_for_pair(
+    orig: int,
+    target: int,
+    margin: float,
+    max_epsilon: float,
+    n_binary_steps: int,
+    timelimit: Optional[float],
+    max_starts: int = 10,
+) -> Optional[Dict]:
+    """
+    Try up to max_starts different correctly-classified MNIST examples
+    of class 'orig' and return the first successful counterfactual (if any).
+    """
+    for attempt in range(1, max_starts + 1):
+        x0 = sample_digit_with_correct_pred(orig)
+        if x0 is None:
+            print(f"  [attempt {attempt}] No suitable starting example; stopping.")
+            return None
+
+        print(f"  [attempt {attempt}] starting from a pred={orig} example")
+        result = find_minimal_counterfactual(
+            x0,
+            original_digit=orig,
+            target_digit=target,
+            margin=margin,
+            max_epsilon=max_epsilon,
+            n_binary_steps=n_binary_steps,
+            timelimit=timelimit,
+        )
+        if result is not None:
+            result["x0"] = x0   # keep original image around for plotting
+            return result
+
+    print(f"  No valid counterfactual found for {orig}→{target} after {max_starts} starts.")
+    return None
 
 def visualize_counterfactual(
     x0: np.ndarray,
     result: Dict,
     orig: int,
     target: int,
+    margin: float = 0.1,
     save_path: Optional[str] = None,
 ):
     fig, axes = plt.subplots(1, 4, figsize=(14, 3.5))
@@ -212,9 +285,8 @@ def visualize_counterfactual(
 
     # Counterfactual
     axes[1].imshow(result["image"], cmap="gray", vmin=0, vmax=1)
-    color = "green" if result["predicted"] == target else "orange"
     axes[1].set_title(
-        f"Counterfactual\npred={result['predicted']}", fontsize=11, color=color
+        f"Counterfactual\npred={result['predicted']}", fontsize=11
     )
     axes[1].axis("off")
 
@@ -238,7 +310,12 @@ def visualize_counterfactual(
     axes[3].legend(fontsize=8)
     axes[3].set_title("Logits", fontsize=11)
 
-    plt.suptitle(f"Minimal Counterfactual: {orig} → {target}", fontsize=13, fontweight="bold")
+    plt.suptitle(
+        f"Minimal logit counterfactual: "
+        f"logit[{target}] ≥ logit[{orig}] + {margin:.2f}",
+        fontsize=13,
+        fontweight="bold",
+    )
     plt.tight_layout()
 
     if save_path:
@@ -246,45 +323,27 @@ def visualize_counterfactual(
         print(f"  Saved: {save_path}")
     plt.close()
 
-def generate_digit_pattern(digit: int, n: int = 1) -> np.ndarray:
-    # np.random.seed(42 + digit)
-    samples = []
 
-    for _ in range(n):
-        img = np.random.uniform(0, 0.2, (7, 7))
-        if digit == 0:
-            img[1:6, 0] += 0.5; img[1:6, 6] += 0.5
-            img[0, 1:6] += 0.5; img[6, 1:6] += 0.5
-        elif digit == 1:
-            img[:, 3] += 0.7
-        elif digit == 2:
-            img[0, :] += 0.5
-            for i in range(7): img[i, 6-i] += 0.3
-            img[6, :] += 0.5
-        elif digit == 3:
-            img[0, :] += 0.5; img[3, :] += 0.5; img[6, :] += 0.5
-        elif digit == 4:
-            img[:4, 0] += 0.5; img[3, :] += 0.5; img[:, 4] += 0.6
-        elif digit == 5:
-            img[0, :] += 0.5; img[3, :] += 0.5; img[6, :] += 0.5
-            img[0:4, 0] += 0.3; img[3:, 6] += 0.3
-        elif digit == 6:
-            img[:, 0] += 0.5; img[3, :] += 0.4
-            img[6, 1:6] += 0.4; img[3:, 6] += 0.4
-        elif digit == 7:
-            img[0, :] += 0.6
-            for i in range(7): img[i, 6-i] += 0.4
-        elif digit == 8:
-            img[0, 1:6] += 0.4; img[3, 1:6] += 0.4; img[6, 1:6] += 0.4
-            img[0:4, 0] += 0.3; img[0:4, 6] += 0.3
-            img[3:, 0] += 0.3; img[3:, 6] += 0.3
-        elif digit == 9:
-            img[0, 1:6] += 0.5; img[0:4, 0] += 0.4; img[0:4, 6] += 0.4
-            img[3, 1:6] += 0.4; img[3:, 6] += 0.5
-        img += np.random.uniform(-0.1, 0.1, (7, 7))
-        samples.append(np.clip(img, 0, 1))
+def sample_digit_with_correct_pred(label: int, max_tries: int = 200) -> Optional[np.ndarray]:
+    """Pick a real MNIST test image with given label that the NN classifies correctly."""
+    idxs = np.where(y_test == label)[0]
+    if len(idxs) == 0:
+        print(f"[warn] no test examples for label {label}")
+        return None
 
-    return np.array(samples)
+    np.random.shuffle(idxs)
+    tried = 0
+    for idx in idxs:
+        x = x_test[idx]
+        pred = int(np.argmax(forward_logits(x)))
+        tried += 1
+        if pred == label:
+            return x
+        if tried >= max_tries:
+            break
+
+    print(f"[warn] Could not find test {label} with pred={label} in {tried} tries.")
+    return None
 
 if __name__ == "__main__":
 
@@ -296,36 +355,40 @@ if __name__ == "__main__":
         (7, 1),
     ]
 
-    # Global timelimit per LP in seconds (tune or set to None)
     LP_TIME_LIMIT = 30
+    MARGIN = 0.1
+    MAX_EPS = 0.5
 
     for orig, target in pairs:
         print(f"\n{'=' * 60}")
         print(f"Finding: {orig} → {target}")
         print("=" * 60)
 
-        x0 = generate_digit_pattern(orig, 1)[0]
-        result = find_minimal_counterfactual(
-            x0,
-            original_digit=orig,
-            target_digit=target,
-            margin=0.1,
-            max_epsilon=0.5,
+        result = find_cf_for_pair(
+            orig,
+            target,
+            margin=MARGIN,
+            max_epsilon=MAX_EPS,
             n_binary_steps=8,
             timelimit=LP_TIME_LIMIT,
+            max_starts=10,
         )
 
         if result is None:
-            print("  ✗ No counterfactual found within search range.")
+            print("  ✗ No valid counterfactual found within search range.")
         else:
-            print(f"  ✓ Found at ε={result['epsilon']:.4f}, "
-                  f"margin={result['margin']:.2f}, "
-                  f"pred={result['predicted']}")
+            print(
+                f"  ✓ Found at ε={result['epsilon']:.4f}, "
+                f"concrete margin={result['margin']:.2f}, "
+                f"pred_cf={result['predicted']}"
+            )
+            # use stored x0 for plotting
             visualize_counterfactual(
-                x0,
+                result["x0"],
                 result,
                 orig,
                 target,
+                margin=MARGIN,
                 save_path=f"counterfactual_{orig}_to_{target}.png",
             )
 

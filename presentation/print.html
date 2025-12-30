@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Interpretability - Print Version</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page {
+            size: 11in 8.5in landscape;
+            margin: 0.5in;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: white;
+            color: #333;
+        }
+        .slide-page {
+            page-break-after: always;
+            page-break-inside: avoid;
+            width: 100%;
+            min-height: 7.5in;
+            padding: 40px;
+            background: white;
+        }
+        .slide-page:last-child {
+            page-break-after: auto;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #555;
+            font-size: 1.8em;
+            margin: 20px 0 15px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #666;
+            font-size: 1.3em;
+            margin: 15px 0 10px;
+        }
+        h4 {
+            color: #777;
+            font-size: 1.1em;
+            margin: 12px 0 8px;
+        }
+        p, li {
+            color: #666;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+        img {
+            max-width: 100%;
+            max-height: 5in;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: block;
+        }
+        .formula-box {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 12px;
+            margin: 12px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-line;
+        }
+        .highlight-box {
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .latex-style {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 1em;
+            line-height: 2;
+        }
+        .latex-align {
+            display: table;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .latex-row {
+            display: table-row;
+        }
+        .latex-label {
+            display: table-cell;
+            text-align: right;
+            padding-right: 12px;
+            font-style: italic;
+        }
+        .latex-content {
+            display: table-cell;
+            text-align: left;
+            padding-left: 8px;
+        }
+        .mechanistic-formula {
+            background: #f0f8ff;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .center-content {
+            text-align: center;
+            padding-top: 100px;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide 1: Title -->
+    <div class="slide-page">
+        <div class="center-content">
+            <h1>Neural Network Interpretability</h1>
+            <p class="subtitle">Understanding Deep Learning Through Polytopes</p>
+            <p style="margin-top: 40px; font-size: 1.2em;">
+                Burton Alexander, Charlie Cruz, Michael Khalfin
+            </p>
+        </div>
+    </div>
+
+    <!-- Slide 2: Motivation -->
+    <div class="slide-page">
+        <h2>Motivation</h2>
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin: 20px 0; text-align: center;">
+            <p style="font-size: 1.3em; color: white; margin: 0;">Neural networks are famously known to be <strong>black boxes</strong></p>
+        </div>
+        <div style="margin: 20px 0;">
+            <img src="../new-yorker-motivation.jpg" alt="New Yorker Article" style="max-height: 3.5in;">
+        </div>
+        <div style="background: #fff3cd; border-left: 6px solid #ffc107; padding: 20px; margin-top: 20px; border-radius: 6px;">
+            <p style="font-size: 1.05em; color: #333;">To address this we focused on a case study: simple feedforward neural networks.</p>
+        </div>
+    </div>
+
+    <!-- Slide 3: Related Work -->
+    <div class="slide-page">
+        <h2>Related Work</h2>
+        <h3>Interpretability is Complex</h3>
+        <div style="background: #f8f9fa; border-left: 4px solid #667eea; padding: 18px; margin: 15px 0;">
+            <p><strong>The Mythos of Model Interpretability</strong> (Lipton '17)</p>
+            <ul>
+                <li>Many competing definitions for interpretability</li>
+                <li>Just because a model is linear, does not make it interpretable...</li>
+            </ul>
+        </div>
+        <h3>Interpreting Optimization Problems</h3>
+        <p>Nevertheless in the literature they have succeeded in interpreting the relationships between variables in LPs and MIPs such as in...</p>
+        <ul style="margin-top: 12px;">
+            <li><strong>The Voice of Optimization</strong> (Bertsimas, Stellato '20)</li>
+            <li><strong>Machines Explaining Linear Programs</strong> (Steinmann et al. '22)</li>
+        </ul>
+        <h3>Previous Work on Neural Network Interpretability</h3>
+        <p>Out of scope!</p>
+    </div>
+
+    <!-- Slide 4: Overview -->
+    <div class="slide-page">
+        <h2>Project Overview</h2>
+        <p>This project demonstrates how we can:</p>
+        <ul>
+            <li><strong>Build</strong> a tiny MNIST digit classifier (49 → 3 → 3 → 10 neurons)</li>
+            <li><strong>Encode</strong> network behavior using polytope representations</li>
+            <li><strong>Understand</strong> what each neuron learns by building visualizations</li>
+            <li><strong>Interpret</strong> system-level behavior through optimization</li>
+        </ul>
+        <h3 style="margin-top: 25px;">Key Innovation</h3>
+        <p>Whereas it is fairly common to use linear programming to formally verify properties about network behavior, we show it is also a powerful tool for <strong>discovering</strong> properties.</p>
+    </div>
+
+    <!-- Slide 5: Network Architecture -->
+    <div class="slide-page">
+        <h2>Network Architecture</h2>
+        <p>We use a deliberately small network for our proof of concept:</p>
+        <div class="highlight-box">
+            <h3>Architecture: GELU-GELU-Linear</h3>
+            <ul>
+                <li><strong>Input:</strong> 49 neurons (7×7 downsampled MNIST images)</li>
+                <li><strong>Hidden Layer 1:</strong> 3 neurons with GELU activation</li>
+                <li><strong>Hidden Layer 2:</strong> 3 neurons with GELU activation</li>
+                <li><strong>Output:</strong> 10 neurons (digit classes 0-9)</li>
+                <li><strong>Post-processing:</strong> Softmax for probabilities</li>
+            </ul>
+        </div>
+        <h3>Why GELU?</h3>
+        <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as we can tightly approximate any function with linear envelopes.</p>
+        <div class="formula-box">
+GELU(x) = x · Φ(x)
+
+Where Φ(x) is the CDF of the standard normal distribution
+
+Approximation: GELU(x) ≈ 0.5x(1 + tanh(√(2/π) · (x + 0.044715x³)))
+        </div>
+    </div>
+
+    <!-- Slide 6: Mathematical Foundation -->
+    <div class="slide-page">
+        <h2>Mathematical Formulation</h2>
+        <h3>Forward Pass</h3>
+        <div class="formula-box">
+x₀ = input (49-dimensional, 7×7 flattened)
+
+a₁ = W₁ · x₀ + b₁  (shape: 3)
+z₁ = GELU(a₁)
+
+a₂ = W₂ · z₁ + b₂  (shape: 3)
+z₂ = GELU(a₂)
+
+a₃ = W₃ · z₂ + b₃  (shape: 10, output logits)
+
+Prediction = argmax(a₃)
+        </div>
+        <h3>Affine Transformations</h3>
+        <div class="formula-box">
+aℓ = Wℓ · zℓ₋₁ + bℓ
+
+Where:
+• Wℓ is the weight matrix for layer ℓ
+• bℓ is the bias vector
+• zℓ₋₁ is the output from the previous layer
+        </div>
+    </div>
+
+    <!-- Slide 7: What is a Polytope? -->
+    <div class="slide-page">
+        <h2>The Polytope Representation</h2>
+        <div class="highlight-box">
+            <h3>Definition</h3>
+            <p>A <strong>polytope</strong> is a geometric region defined by linear inequalities. For neural network verification, we construct a polytope that <em>over-approximates</em> all possible network behaviors for inputs in a given region.</p>
+        </div>
+        <h3>Variables in our polytope:</h3>
+        <ul>
+            <li><code>x₀[i]</code> for i = 0..48: Input pixels</li>
+            <li><code>a₁[j], z₁[j]</code> for j = 0..2: Pre/post-activation for hidden layer 1</li>
+            <li><code>a₂[k], z₂[k]</code> for k = 0..2: Pre/post-activation for hidden layer 2</li>
+            <li><code>a₃[m]</code> for m = 0..9: Output logits</li>
+        </ul>
+        <h3>Constraints in our polytope:</h3>
+        <ol>
+            <li><strong>Input box:</strong> <code>x₀[i] ∈ [x₀[i] - ε, x₀[i] + ε] ∩ [0, 1]</code> for all i</li>
+            <li><strong>Affine relations:</strong> <code>aℓ = Wℓ · zℓ₋₁ + bℓ</code> (equality constraints)</li>
+            <li><strong>GELU envelopes:</strong> Linear lower/upper bounds on <code>z = GELU(a)</code></li>
+        </ol>
+    </div>
+
+    <!-- Slide 8: GELU Polytope Encoding -->
+    <div class="slide-page">
+        <h2>Encoding GELU with Linear Constraints</h2>
+        <p>The key insight: we can replace the nonlinear GELU activation with tight linear envelopes!</p>
+        <div class="formula-box">
+For each neuron with pre-activation a and post-activation z:
+
+<strong>Lower envelope:</strong>  z ≥ αₗ · a + βₗ
+<strong>Upper envelope:</strong>  z ≤ αᵤ · a + βᵤ
+
+Where αₗ, βₗ, αᵤ, βᵤ are computed using:
+• Interval bounds [L, U] for a (from IBP)
+• Tight linear envelopes that bound GELU over [L, U]
+        </div>
+        <h3>Why This Works</h3>
+        <p>By using linear constraints instead of the actual nonlinear GELU function, we create a polytope that:</p>
+        <ul>
+            <li>Contains all possible network behaviors in the input region</li>
+            <li>Can be analyzed using efficient linear programming solvers</li>
+            <li>Provides formal verification guarantees</li>
+        </ul>
+    </div>
+
+    <!-- Slide 9: Interactive Demo (Note) -->
+    <div class="slide-page">
+        <h2>Interactive Network Visualization</h2>
+        <div style="background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 30px; text-align: center; margin-top: 100px;">
+            <h3 style="color: #1976d2; margin-bottom: 20px;">💻 Interactive Demo Available Online</h3>
+            <p style="font-size: 1.2em; color: #333;">
+                Visit the web version to explore the interactive neural network visualization with:
+            </p>
+            <ul style="text-align: left; display: inline-block; margin-top: 20px;">
+                <li>Live network activation display</li>
+                <li>Hover tooltips showing neuron details</li>
+                <li>Clickable neurons to see learned patterns</li>
+                <li>Navigate through MNIST samples</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 10: Robustness Analysis -->
+    <div class="slide-page">
+        <h2>Key Finding: Linear Classifier</h2>
+        <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
+        <img src="../demo/epsilon_robustness_full.png" alt="Robustness vs Perturbation Size">
+        <h3 style="margin-top: 15px;">Key Findings</h3>
+        <ul>
+            <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
+            <li>Different digits show varying sensitivity to perturbations</li>
+            <li>Digit 1 remains highly robust even at ε = 0.02</li>
+            <li>Digit 4 degrades more quickly with larger perturbations</li>
+            <li>The LP itself appears to be a good classifier for MNIST</li>
+        </ul>
+    </div>
+
+    <!-- Slide 11: Mechanistic Interpretability -->
+    <div class="slide-page">
+        <h2>Understanding What Neurons Learn</h2>
+        <p>Each hidden neuron learns interpretable patterns that combine to form digit classifiers.</p>
+        <div class="mechanistic-formula">
+            <strong>Example: How the network recognizes Digit 0</strong><br><br>
+            Digit 0 ∝ (++ Frame) - (- Spine) - (- Belt)<br>
+            <span style="font-size: 0.9em; color: #666;">
+                Must act like a container &nbsp;&nbsp; Must have empty center &nbsp;&nbsp; Must have empty middle
+            </span>
+        </div>
+        <p><strong>Layer 1 Neurons:</strong></p>
+        <ul>
+            <li><strong>Frame:</strong> Detects outer boundary/container structure</li>
+            <li><strong>Spine:</strong> Detects vertical centerline activation</li>
+            <li><strong>Belt:</strong> Detects horizontal middle activation</li>
+        </ul>
+        <p style="margin-top: 15px;">
+            The network learns that digit 0 should strongly activate the "Frame" detector while avoiding activation of "Spine" and "Belt" detectors (which would indicate filled regions).
+        </p>
+    </div>
+
+    <!-- Slide 12: Mechanistic Trace -->
+    <div class="slide-page">
+        <h2>Mechanistic Trace for Digit 0</h2>
+        <img src="../demo/dashboard_digit_0.png" alt="Mechanistic trace for digit 0">
+        <p style="font-size: 0.95em; color: #666; margin-top: 12px;">
+            The dashboard shows how Layer 1 neurons detect basic patterns (Frame, Spine, Belt), and Layer 2 neurons combine them with learned weights to produce the final digit 0 logit.
+        </p>
+    </div>
+
+    <!-- Slide 13: Constraint Signatures -->
+    <div class="slide-page">
+        <h2>Constraint Signatures</h2>
+        <ul style="font-size: 0.95em;">
+            <li>For each digit, we take a real image, allow an ε-ball of perturbations, and use an LP to maximize that digit's logit inside the polytope.</li>
+            <li>At the optimum we record which inequalities are tight; this gives a "constraint signature" for that digit.</li>
+            <li>Red heatmaps: pixels that frequently hit their lower bound (the network prefers less ink there).</li>
+            <li>Blue heatmaps: pixels that frequently hit their upper bound (the network prefers more ink there).</li>
+            <li>Bar plots: how often each GELU envelope in layers 1 and 2 is active for that digit.</li>
+            <li>Experiment: Each digit ends up with a distinctive pattern that we can read as a rule about where the network expects ink or blank space.</li>
+        </ul>
+        <img src="../constraint_signatures.png" alt="Constraint Signatures" style="max-height: 3.5in;">
+    </div>
+
+    <!-- Slide 14: System-Level Behavior -->
+    <div class="slide-page">
+        <h2>System-Level Behavior</h2>
+        <h3>Formulation</h3>
+        <div class="latex-style">
+            <div class="latex-align">
+                <div class="latex-row">
+                    <div class="latex-label">max</div>
+                    <div class="latex-content"><i>a</i>₃[true class] − <i>t</i></div>
+                </div>
+                <div class="latex-row">
+                    <div class="latex-label">s.t.</div>
+                    <div class="latex-content"><i>t</i> ≥ <i>a</i>₃[<i>k</i>]&nbsp;&nbsp;&nbsp;&nbsp;∀ <i>k</i> ≠ true class</div>
+                </div>
+                <div class="latex-row">
+                    <div class="latex-label"></div>
+                    <div class="latex-content">all polytope constraints hold</div>
+                </div>
+            </div>
+        </div>
+        <p><strong>Seeks to maximize distance between correct logit and largest other logit</strong></p>
+        <p>Starts from best performing version of each digit and can deviate by ε amount</p>
+        <p>Uses ℓ₁ regularization</p>
+        <img src="../optimized_digits.png" alt="Optimized Digits" style="max-height: 3in; margin-top: 15px;">
+    </div>
+
+    <!-- Slide 15: Limitations & Next Steps -->
+    <div class="slide-page">
+        <h2>Limitations & Next Steps</h2>
+        <h3>Limitations & Speculation</h3>
+        <p>We don't know whether our methods will scale to larger networks!</p>
+        <ul>
+            <li>Too many hidden neurons, possibly representing multiple concepts</li>
+            <li>For larger networks, the system-level analysis may be more useful!</li>
+            <li>Increased computational cost for LP solving</li>
+        </ul>
+        <h3>Next Steps</h3>
+        <ul>
+            <li>Test other activation functions</li>
+            <li>Beyond feedforward: CNNs, RNNs, or Transformer models?</li>
+            <li>Neural network training as a way to create linear classification models</li>
+            <li>How can we use interpretability results?</li>
+        </ul>
+    </div>
+
+    <!-- Slide 16: Thank You -->
+    <div class="slide-page">
+        <div class="center-content">
+            <h1>Thank You!</h1>
+            <p class="subtitle">Questions?</p>
+            <div style="margin-top: 40px;">
+                <h3>Key Takeaways</h3>
+                <ul style="display: inline-block; text-align: left; margin-top: 20px;">
+                    <li>Polytopes enable formal verification of neural networks</li>
+                    <li>Small networks can be fully interpretable</li>
+                    <li>Linear programming provides both verification and insights</li>
+                    <li>Mechanistic interpretability reveals how features compose</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

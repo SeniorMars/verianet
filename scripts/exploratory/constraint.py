@@ -14,11 +14,13 @@ from typing import Dict, List, Optional
 import matplotlib.pyplot as plt
 from scipy import stats
 
-from basic import gelu, tight_gelu_envelope, ibp_activation
-from helper import PyomoPolyAnalyzer, ibp_affine_keras
+from verianet.activations import gelu, tight_gelu_envelope
+from verianet.bounds import ibp_activation, ibp_affine_keras
+from verianet.legacy.pyomo import PyomoPolyAnalyzer
+from verianet.paths import RESULTS_DIR, WEIGHTS_PATH, ensure_dir
 
 # Load weights
-data = np.load("verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
 
@@ -502,7 +504,8 @@ if __name__ == "__main__":
     # Visualize
     print("\n" + "="*70)
     print("GENERATING VISUALIZATION...")
-    visualize_signatures(results, 'constraint_signatures.png')
+    ensure_dir(RESULTS_DIR)
+    visualize_signatures(results, str(RESULTS_DIR / 'constraint_signatures.png'))
     
     # Generate hypotheses
     print("\n" + "="*70)
@@ -530,12 +533,12 @@ if __name__ == "__main__":
     # Save results
     print("\n" + "="*70)
     print("SAVING RESULTS...")
-    np.savez('constraint_analysis.npz',
+    np.savez(RESULTS_DIR / 'constraint_analysis.npz',
              results=results,
              hypotheses=hypotheses,
              epsilon=EPSILON,
              n_samples=N_SAMPLES)
-    print("Saved to constraint_analysis.npz")
+    print(f"Saved to {RESULTS_DIR / 'constraint_analysis.npz'}")
     
     print("\n" + "="*70)
     print("ANALYSIS COMPLETE")

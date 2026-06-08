@@ -1,9 +1,3 @@
-import sys
-sys.path.append('..')
-
-from basic import *
-from helper import *
-from basic import tight_gelu_envelope
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import tensorflow as tf
@@ -11,6 +5,11 @@ import matplotlib.pyplot as plt
 import signal
 from contextlib import contextmanager
 import pyomo.environ as pyo
+
+from verianet.activations import gelu, tight_gelu_envelope
+from verianet.bounds import ibp_activation, ibp_affine_keras
+from verianet.legacy.pyomo import PyomoPolyAnalyzer
+from verianet.paths import RESULTS_DIR, WEIGHTS_PATH, ensure_dir
 
 @contextmanager
 def timeout_context(seconds):
@@ -29,7 +28,7 @@ def timeout_context(seconds):
 print("INITIALIZING LP SOLVER FOR HYPOTHESIS TESTING")
 
 # Load weights
-data = np.load("../verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
 
@@ -143,8 +142,9 @@ for i in range(3):
     ax.set_xticks([]); ax.set_yticks([])
 
 fig.suptitle("Platonic Ideals (LP Generated)", fontsize=16, fontweight='bold')
-plt.savefig("platonic_ideals.png", dpi=150)
-print("Saved to 'platonic_ideals.png'")
+max_logits_dir = ensure_dir(RESULTS_DIR / "max_logits")
+plt.savefig(max_logits_dir / "platonic_ideals.png", dpi=150)
+print(f"Saved to {max_logits_dir / 'platonic_ideals.png'}")
 
 # CONSTRAINED OPTIMIZATION
 print("\nCONSTRAINED OPTIMIZATION")
@@ -304,7 +304,7 @@ for i, result in enumerate(digit_results):
     ax.grid(True, alpha=0.3, axis='y')
 
     # Save individual plot
-    filename = f"digit_{result['digit']}.png"
+    filename = max_logits_dir / f"digit_{result['digit']}.png"
     plt.savefig(filename, dpi=150, bbox_inches='tight')
     print(f"  Saved: {filename}")
     plt.close(fig)

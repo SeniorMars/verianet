@@ -350,7 +350,7 @@
                     </div>
 
                     <div style="margin: 30px 0;">
-                        <img src="../new-yorker-motivation.jpg" alt="New Yorker Article - Why the Godfather of A.I. Fears What He's Built" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <img src="assets/new-yorker-motivation.jpg" alt="New Yorker Article - Why the Godfather of A.I. Fears What He's Built" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                     </div>
 
                     <div style="background: #fff3cd; border-left: 6px solid #ffc107; padding: 25px; margin-top: 40px; border-radius: 6px;">
@@ -415,7 +415,7 @@
                         </ul>
                     </div>
                     <h3>Why GELU?</h3>
-                    <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as we can tightly approximate any function with linear envelopes. </p>
+                    <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as long as we can construct sound linear envelopes for the activation. </p>
 
                     <div class="formula-box">
 GELU(x) = x · Φ(x)
@@ -490,7 +490,7 @@ Where:<br>
                 content: `
                     <h2>Encoding GELU with Linear Constraints</h2>
 
-                    <p>The key insight: we can replace the nonlinear GELU activation with tight linear envelopes!</p>
+                    <p>The key insight: we can replace the nonlinear GELU activation with sound linear envelopes.</p>
 
                     <div class="formula-box">
 For each neuron with pre-activation a and post-activation z:
@@ -500,7 +500,7 @@ For each neuron with pre-activation a and post-activation z:
 
 Where αₗ, βₗ, αᵤ, βᵤ are computed using:
 • Interval bounds [L, U] for a (from IBP)
-• Tight linear envelopes that bound GELU over [L, U]
+• Sound linear envelopes that bound GELU over [L, U]
                     </div>
 
                     <h3>Why This Works</h3>
@@ -508,7 +508,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                     <ul>
                         <li>Contains all possible network behaviors in the input region</li>
                         <li>Can be analyzed using efficient linear programming solvers</li>
-                        <li>Provides formal verification guarantees</li>
+                        <li>Can certify universal properties when the relaxed LP bound is strong enough</li>
                     </ul>
 
                     <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
@@ -555,7 +555,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
             {
                 title: "Robustness Analysis",
                 content: `
-                    <h2>Key Finding: Linear Classifier</h2>
+                    <h2>Key Finding: Certified Robustness</h2>
 
                     <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
 
@@ -563,11 +563,11 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
 
                     <h3 style="margin-top: 20px;">Key Findings</h3>
                     <ul>
-                        <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
+                        <li>The verifier certifies many true-label predictions for small perturbations (ε ≤ 0.02)</li>
                         <li>Different digits show varying sensitivity to perturbations</li>
                         <li>Digit 1 remains highly robust even at ε = 0.02</li>
                         <li>Digit 4 degrades more quickly with larger perturbations</li>
-                        <li>The LP itself appears to be a good classifier for MNIST</li>
+                        <li>The LP is a conservative verifier, not a standalone classifier</li>
                     </ul>
                 `
             },
@@ -622,7 +622,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                     <li>Bar plots: how often each GELU envelope in layers 1 and 2 is active for that digit.</li>
                     <li>Experiment: Each digit ends up with a distinctive pattern that we can read as a rule about where the network expects ink or blank space.</li>
                     </ul>
-                    <img src="../constraint_signatures.png" alt="Constraint Signatures" style="max-width: 100%;">
+                    <img src="../results/constraint_signatures.png" alt="Constraint Signatures" style="max-width: 100%;">
                 `
             },
             {
@@ -652,7 +652,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
                     <p>Starts from best performing version of each digit and can deviate by ε amount</p>
                     <p>Uses ℓ₁ regularization</p>
 
-                    <img src="../optimized_digits.png" alt="Optimized Digits" style="max-width: 100%; margin-top: 20px;">
+                    <img src="../results/optimized_digits.png" alt="Optimized Digits" style="max-width: 100%; margin-top: 20px;">
                 `
             },
             {

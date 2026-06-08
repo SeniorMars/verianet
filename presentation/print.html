@@ -155,7 +155,7 @@
             <p style="font-size: 1.3em; color: white; margin: 0;">Neural networks are famously known to be <strong>black boxes</strong></p>
         </div>
         <div style="margin: 20px 0;">
-            <img src="../new-yorker-motivation.jpg" alt="New Yorker Article" style="max-height: 3.5in;">
+            <img src="assets/new-yorker-motivation.jpg" alt="New Yorker Article" style="max-height: 3.5in;">
         </div>
         <div style="background: #fff3cd; border-left: 6px solid #ffc107; padding: 20px; margin-top: 20px; border-radius: 6px;">
             <p style="font-size: 1.05em; color: #333;">To address this we focused on a case study: simple feedforward neural networks.</p>
@@ -212,7 +212,7 @@
             </ul>
         </div>
         <h3>Why GELU?</h3>
-        <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as we can tightly approximate any function with linear envelopes.</p>
+        <p>ReLU (Rectified Linear Unit) would have been a simpler choice, as it is piecewise, whereas GELU (Gaussian Error Linear Unit) is a smooth activation function. However, our architecture is activation-function agnostic as long as we can construct sound linear envelopes for the activation.</p>
         <div class="formula-box">
 GELU(x) = x · Φ(x)
 
@@ -275,7 +275,7 @@ Where:
     <!-- Slide 8: GELU Polytope Encoding -->
     <div class="slide-page">
         <h2>Encoding GELU with Linear Constraints</h2>
-        <p>The key insight: we can replace the nonlinear GELU activation with tight linear envelopes!</p>
+        <p>The key insight: we can replace the nonlinear GELU activation with sound linear envelopes.</p>
         <div class="formula-box">
 For each neuron with pre-activation a and post-activation z:
 
@@ -284,14 +284,14 @@ For each neuron with pre-activation a and post-activation z:
 
 Where αₗ, βₗ, αᵤ, βᵤ are computed using:
 • Interval bounds [L, U] for a (from IBP)
-• Tight linear envelopes that bound GELU over [L, U]
+• Sound linear envelopes that bound GELU over [L, U]
         </div>
         <h3>Why This Works</h3>
         <p>By using linear constraints instead of the actual nonlinear GELU function, we create a polytope that:</p>
         <ul>
             <li>Contains all possible network behaviors in the input region</li>
             <li>Can be analyzed using efficient linear programming solvers</li>
-            <li>Provides formal verification guarantees</li>
+            <li>Can certify universal properties when the relaxed LP bound is strong enough</li>
         </ul>
     </div>
 
@@ -314,16 +314,16 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
 
     <!-- Slide 10: Robustness Analysis -->
     <div class="slide-page">
-        <h2>Key Finding: Linear Classifier</h2>
+        <h2>Key Finding: Certified Robustness</h2>
         <p>Using the polytope representation, we can verify how robust the network is to input perturbations:</p>
         <img src="../demo/epsilon_robustness_full.png" alt="Robustness vs Perturbation Size">
         <h3 style="margin-top: 15px;">Key Findings</h3>
         <ul>
-            <li>The LP maintains high accuracy for small perturbations (ε ≤ 0.02)</li>
+            <li>The verifier certifies many true-label predictions for small perturbations (ε ≤ 0.02)</li>
             <li>Different digits show varying sensitivity to perturbations</li>
             <li>Digit 1 remains highly robust even at ε = 0.02</li>
             <li>Digit 4 degrades more quickly with larger perturbations</li>
-            <li>The LP itself appears to be a good classifier for MNIST</li>
+            <li>The LP is a conservative verifier, not a standalone classifier</li>
         </ul>
     </div>
 
@@ -369,7 +369,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
             <li>Bar plots: how often each GELU envelope in layers 1 and 2 is active for that digit.</li>
             <li>Experiment: Each digit ends up with a distinctive pattern that we can read as a rule about where the network expects ink or blank space.</li>
         </ul>
-        <img src="../constraint_signatures.png" alt="Constraint Signatures" style="max-height: 3.5in;">
+        <img src="../results/constraint_signatures.png" alt="Constraint Signatures" style="max-height: 3.5in;">
     </div>
 
     <!-- Slide 14: System-Level Behavior -->
@@ -395,7 +395,7 @@ Where αₗ, βₗ, αᵤ, βᵤ are computed using:
         <p><strong>Seeks to maximize distance between correct logit and largest other logit</strong></p>
         <p>Starts from best performing version of each digit and can deviate by ε amount</p>
         <p>Uses ℓ₁ regularization</p>
-        <img src="../optimized_digits.png" alt="Optimized Digits" style="max-height: 3in; margin-top: 15px;">
+        <img src="../results/optimized_digits.png" alt="Optimized Digits" style="max-height: 3in; margin-top: 15px;">
     </div>
 
     <!-- Slide 15: Limitations & Next Steps -->

@@ -7,9 +7,6 @@ B. Shows LP variables/constraints for each node
 C. "Lights up" the network when processing a specific digit (activation values)
 """
 
-from basic import *
-from helper import *
-from basic import tight_gelu_envelope
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import tensorflow as tf
@@ -17,12 +14,17 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import matplotlib.patches as patches
 
+from verianet.activations import gelu, tight_gelu_envelope
+from verianet.bounds import ibp_activation, ibp_affine_keras
+from verianet.legacy.pyomo import PyomoPolyAnalyzer
+from verianet.paths import WEIGHTS_PATH
+
 # Load test data and resize to 7x7
 (x_test, y_test), _ = mnist.load_data()
 x_test = tf.image.resize(x_test[..., tf.newaxis], [7, 7]).numpy().squeeze() / 255
 
 # Load weights
-data = np.load("verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
 

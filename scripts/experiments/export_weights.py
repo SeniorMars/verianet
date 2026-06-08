@@ -2,8 +2,10 @@
 import numpy as np
 import json
 
+from verianet.paths import DEMO_DIR, WEIGHTS_PATH
+
 # Load weights
-data = np.load("verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 
 # Export to JSON (we'll add sample images to the HTML directly)
 weights = {
@@ -21,8 +23,9 @@ weights = {
     }
 }
 
-with open("demo/weights.json", "w") as f:
+weights_path = DEMO_DIR / "weights.json"
+with weights_path.open("w") as f:
     json.dump(weights, f)
 
-print("Exported to demo/weights.json")
+print(f"Exported to {weights_path}")
 print(f"Architecture: {weights['architecture']}")

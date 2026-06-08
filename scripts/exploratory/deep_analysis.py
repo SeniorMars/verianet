@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from collections import defaultdict
 
-from basic import gelu, tight_gelu_envelope, ibp_activation
-from helper import PyomoPolyAnalyzer, ibp_affine_keras
+from verianet.activations import gelu, tight_gelu_envelope
+from verianet.bounds import ibp_activation, ibp_affine_keras
+from verianet.legacy.pyomo import PyomoPolyAnalyzer
+from verianet.paths import RESULTS_DIR, WEIGHTS_PATH, ensure_dir
 
 # Load weights and results
-data = np.load("verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
 
@@ -261,9 +263,10 @@ for i in range(3):
 
 plt.suptitle('What Each L1 Neuron "Looks For"', fontsize=14, fontweight='bold')
 plt.tight_layout()
-plt.savefig('l1_weight_patterns.png', dpi=150, bbox_inches='tight')
+ensure_dir(RESULTS_DIR)
+plt.savefig(RESULTS_DIR / 'l1_weight_patterns.png', dpi=150, bbox_inches='tight')
 plt.close()
-print("Saved L1 weight patterns to l1_weight_patterns.png")
+print(f"Saved L1 weight patterns to {RESULTS_DIR / 'l1_weight_patterns.png'}")
 
 # Analyze which digits each neuron "prefers"
 print("\nNeuron Preference Analysis:")

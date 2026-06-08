@@ -339,7 +339,7 @@ Prediction = argmax(a<sub>3</sub>)  [or argmax(Softmax(a<sub>3</sub>))]
         <p>
             By stepping through the NN, we can understand how the network composes features
             to make predictions. Each hidden neuron learns interpretable patterns that combine to form
-            digit classifiers. We formally verify these properties with the polytope.
+            digit classifiers. We test these hypotheses with LP objectives over the polytope.
         </p>
 
         <p style="margin-top: 10px;">
@@ -365,15 +365,15 @@ Prediction = argmax(a<sub>3</sub>)  [or argmax(Softmax(a<sub>3</sub>))]
         <div class="robustness-section">
             <h2>Robustness Analysis</h2>
             <p>
-                The plot below shows <strong>robustness rates</strong> (percentage of test samples where the LP
-                makes the correct prediction within an ε-ball) across different perturbation sizes for 600 test samples:
+                The plot below shows <strong>certified true-label robustness rates</strong> (percentage of test samples where the LP
+                verifies that no competing class can beat the true label within an ε-ball):
             </p>
             <img src="epsilon_robustness_full.png" alt="Robustness vs Perturbation Size">
             <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                <strong>Key findings:</strong> The LP maintains high accuracy for small perturbations (ε ≤ 0.02),
+                <strong>Key findings:</strong> The verifier certifies many true-label predictions for small perturbations (ε ≤ 0.02),
                 with varying sensitivity across different digit classes. For example, digit 1 remains highly robust
-                even at ε = 0.02, while digit 4 degrades more quickly. Even more interestingly, the LP appears to be
-                a good classifier for the MNIST problem in and of itself. 
+                even at ε = 0.02, while digit 4 degrades more quickly. These are conservative certificates: a failed
+                LP proof does not necessarily mean an adversarial example exists.
             </p>
         </div>
     </div>

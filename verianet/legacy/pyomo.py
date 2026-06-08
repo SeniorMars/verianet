@@ -2,6 +2,8 @@ import pyomo.environ as pyo
 import numpy as np
 from typing import Callable, Tuple, List
 
+from verianet.lp import bounds_from_envelope
+
 # here for the sake of testing
 def relu_envelope(L: float, U: float):
     """
@@ -121,12 +123,35 @@ class PyomoPolyAnalyzer:
         setattr(self.model, z_name, pyo.Var(range(n), domain=pyo.Reals))
         z_vars = getattr(self.model, z_name)
         a_vars = getattr(self.model, a_name)
-        
-        constraint_idx = 0
+
+        envelopes = []
+        z_lb = np.zeros(n, dtype=float)
+        z_ub = np.zeros(n, dtype=float)
         for i in range(n):
             Li, Ui = float(L[i]), float(U[i])
             lower_lines, upper_lines = builder(Li, Ui)
-            
+            envelopes.append((lower_lines, upper_lines))
+            z_lb[i], z_ub[i] = bounds_from_envelope(lower_lines, upper_lines, Li, Ui)
+
+        def pre_lb_rule(model, i):
+            return a_vars[i] >= float(L[i])
+
+        def pre_ub_rule(model, i):
+            return a_vars[i] <= float(U[i])
+
+        def post_lb_rule(model, i):
+            return z_vars[i] >= float(z_lb[i])
+
+        def post_ub_rule(model, i):
+            return z_vars[i] <= float(z_ub[i])
+
+        setattr(self.model, f"{a_name}_act_lb", pyo.Constraint(range(n), rule=pre_lb_rule))
+        setattr(self.model, f"{a_name}_act_ub", pyo.Constraint(range(n), rule=pre_ub_rule))
+        setattr(self.model, f"{z_name}_act_lb", pyo.Constraint(range(n), rule=post_lb_rule))
+        setattr(self.model, f"{z_name}_act_ub", pyo.Constraint(range(n), rule=post_ub_rule))
+        
+        constraint_idx = 0
+        for i, (lower_lines, upper_lines) in enumerate(envelopes):
             # lower: z >= m*a + c
             for m_val, c_val, _, _ in lower_lines:
                 m_val = float(m_val)
@@ -179,7 +204,7 @@ class PyomoPolyAnalyzer:
         else:
             return None, results
         
-    def optimize_with_timelimit(self, objective_expr, time_limit: int, sense='min'):
+    def optimize_with_timelimit(self, objective_expr, time_limit: int | None, sense='min'):
         """
         Optimize with a time limit (in seconds).
         Note: not all solvers support time limits.
@@ -194,7 +219,8 @@ class PyomoPolyAnalyzer:
             self.model.obj = pyo.Objective(expr=objective_expr, sense=pyo.maximize)
         
         solver = pyo.SolverFactory('glpk')  # change if you want gurobi, etc.
-        solver.options['tmlim'] = time_limit  # for glpk; change for other solvers
+        if time_limit is not None:
+            solver.options['tmlim'] = time_limit  # for glpk; change for other solvers
         results = solver.solve(self.model, tee=False)
         
         term = results.solver.termination_condition

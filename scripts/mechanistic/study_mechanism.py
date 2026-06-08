@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
@@ -8,23 +7,8 @@ import matplotlib.patheffects as pe
 from dataclasses import dataclass
 from typing import List
 
-# ==========================================
-# 0. SETUP & HELPER FUNCTIONS
-# ==========================================
-sys.path.append('..')
-
-# Robust GELU definition in case helper.py is missing
-def gelu_custom(x):
-    return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * np.power(x, 3))))
-
-try:
-    from basic import *
-    from helper import *
-    # Ensure gelu is available if imported from basic/helper
-    if 'gelu' not in globals(): gelu = gelu_custom
-except ImportError:
-    gelu = gelu_custom
-    print("Warning: 'basic' or 'helper' modules not found. Using local GELU.")
+from verianet.activations import gelu
+from verianet.paths import RESULTS_DIR, WEIGHTS_PATH, ensure_dir
 
 # ==========================================
 # 1. STATE MANAGEMENT (Data Classes)
@@ -58,7 +42,7 @@ class NetworkTrace:
 # ==========================================
 
 class NeuroVis:
-    def __init__(self, weights_path="../verysmallnn_weights.npz"):
+    def __init__(self, weights_path=WEIGHTS_PATH):
         # Load weights
         try:
             data = np.load(weights_path)
@@ -290,7 +274,8 @@ if __name__ == "__main__":
     x_test = tf.image.resize(x_test[..., tf.newaxis], [7, 7]).numpy().squeeze() / 255
     
     # Initialize Visualizer
-    viz = NeuroVis("../verysmallnn_weights.npz")
+    viz = NeuroVis()
+    output_dir = ensure_dir(RESULTS_DIR / "study_mechanism")
     
     print(f"{'='*50}")
     print(f"Generating Dashboards for Digits 0-9")
@@ -335,7 +320,7 @@ if __name__ == "__main__":
         trace = viz.capture_trace(example_img, true_lbl)
 
         # 2. Render and Save
-        filename = f"dashboard_digit_{digit}.png"
+        filename = output_dir / f"dashboard_digit_{digit}.png"
         viz.plot_dashboard(trace, save_path=filename)
         print(f"  -> Saved {filename}")
         

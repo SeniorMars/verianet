@@ -12,6 +12,13 @@ from typing import Callable, Any
 from scipy.optimize import linprog
 from scipy.special import erf
 
+from verianet.activations import (
+    gelu as _certified_gelu,
+    sound_gelu_envelope as _sound_gelu_envelope,
+)
+from verianet.bounds import ibp_activation as _certified_ibp_activation
+from verianet.lp import bounds_from_envelope
+
 # ---------- Type Aliases for Clarity ----------
 # Using numpy.typing for clear array shapes and types
 Vector = npt.NDArray[np.float64]  # Represents a 1D vector
@@ -103,8 +110,8 @@ def ibp_activation(L: Vector, U: Vector, f: VecFunc) -> tuple[Vector, Vector]:
     """
     Performs IBP over an arbitrary activation function.
 
-    This is a *conservative* (over-approximated) bound. It samples a
-    few points and takes the min/max. It does not assume monotonicity.
+    GELU uses exact scalar interval bounds. Other activations use the fallback
+    implementation in `verianet.bounds`.
 
     Args:
         L: Lower bounds of the input (n,)
@@ -114,13 +121,7 @@ def ibp_activation(L: Vector, U: Vector, f: VecFunc) -> tuple[Vector, Vector]:
     Returns:
         A tuple (L_out, U_out) of the output bounds.
     """
-    # Sample key points: endpoints and midpoint
-    xs = np.stack([L, U, 0.5 * (L + U)], axis=1)
-    vals = f(xs)
-    # The true bounds are guaranteed to be within the min/max of the samples
-    # *only if* the function's extrema are at the endpoints.
-    # For GELU, this is a heuristic, but a reasonable one.
-    return np.min(vals, axis=1), np.max(vals, axis=1)
+    return _certified_ibp_activation(L, U, f)
 
 
 # ---------- Activation envelopes ----------
@@ -273,68 +274,19 @@ def sampled_envelope(
 
 # GELU function
 def gelu(x: Vector) -> Vector:
-    """The GELU activation function, using the 'erf' approximation."""
-    # exact: x*Phi(x); approximation: 0.5*x*(1+erf(x/sqrt(2)))
-    return 0.5 * x * (1.0 + erf(x / np.sqrt(2.0)))
+    """The exact GELU activation x * Phi(x)."""
+    return _certified_gelu(x)
 
 
 def tight_gelu_envelope(L: float, U: float) -> Envelope:
     """
-    Builds a tight convex relaxation for GELU on [L, U].
+    Builds a sound linear relaxation for GELU on [L, U].
 
-    Strategy:
-    - Lower bound: Tangent line at the point of maximum slope in [L, U]
-    - Upper bound: Chord (secant line) from (L, GELU(L)) to (U, GELU(U))
-
-    This is provably tight because GELU is:
-    - Convex on (-∞, ~-0.17)
-    - Concave on (~-0.17, ~0.95)
-    - Convex on (~0.95, ∞)
+    This name is kept for backwards compatibility. The implementation favors
+    certified containment of GELU over the older tangent/secant heuristic, which
+    was not sound on several intervals.
     """
-    # If bounds are very tight, just use identity
-    if abs(U - L) < 1e-6:
-        return [(1.0, 0.0, L, U)], [(1.0, 0.0, L, U)]
-    
-    # For large positive values where GELU ≈ x, use simple linear bounds
-    if L > 2.0:
-        return [(1.0, 0.0, L, U)], [(1.0, 0.0, L, U)]
-    
-    # For large negative values where GELU ≈ 0
-    if U < -3.0:
-        return [(0.0, 0.0, L, U)], [(0.0, 0.0, L, U)]
-    
-    def gelu_deriv(x: float) -> float:
-        phi_x = np.exp(-0.5 * x**2) / np.sqrt(2 * np.pi)
-        Phi_x = 0.5 * (1 + erf(x / np.sqrt(2)))
-        return Phi_x + x * phi_x
-
-    xs = np.linspace(L, U, 100)
-    derivs = np.array([gelu_deriv(x) for x in xs])
-    max_idx = np.argmax(derivs)
-    x_star = xs[max_idx]
-
-    y_star = gelu(np.array([x_star])).item()
-    m_tangent = gelu_deriv(x_star)
-    c_tangent = y_star - m_tangent * x_star
-
-    y_L = gelu(np.array([L])).item()
-    y_U = gelu(np.array([U])).item()
-    m_secant = (y_U - y_L) / (U - L) if U != L else 0.0
-    c_secant = y_L - m_secant * L
-
-    # CRITICAL: Check which is actually lower/upper at midpoint
-    mid = (L + U) / 2
-    tangent_at_mid = m_tangent * mid + c_tangent
-    secant_at_mid = m_secant * mid + c_secant
-    
-    if tangent_at_mid <= secant_at_mid:
-        lower = [(m_tangent, c_tangent, L, U)]
-        upper = [(m_secant, c_secant, L, U)]
-    else:
-        lower = [(m_secant, c_secant, L, U)]
-        upper = [(m_tangent, c_tangent, L, U)]
-
-    return lower, upper
+    return _sound_gelu_envelope(L, U)
 
 
 # ---------- Core analyzer ----------
@@ -471,8 +423,13 @@ class PolyAnalyzer:
         self.constraints_b = np.concatenate([self.constraints_b, b_bound])
 
         m_rows, b_rows = [], []
+        z_lbs = np.zeros(m_bounds, dtype=np.float64)
+        z_ubs = np.zeros(m_bounds, dtype=np.float64)
         for i, (Li, Ui) in enumerate(zip(L, U)):
             lower_lines, upper_lines = builder(float(Li), float(Ui))
+            z_lbs[i], z_ubs[i] = bounds_from_envelope(
+                lower_lines, upper_lines, float(Li), float(Ui)
+            )
             Ai, bi = envelope_from_lines(lower_lines, upper_lines)
             if Ai.size == 0:
                 continue
@@ -485,6 +442,18 @@ class PolyAnalyzer:
         if m_rows:
             self.constraints_A = np.vstack([self.constraints_A, *m_rows])
             self.constraints_b = np.concatenate([self.constraints_b, *b_rows])
+
+        # Bound the relaxed activation output. Later IBP steps assume these
+        # activation intervals when constructing downstream envelopes.
+        A_z = np.zeros((2 * m_bounds, self.nvars), dtype=np.float64)
+        b_z = np.zeros(2 * m_bounds, dtype=np.float64)
+        for i in range(m_bounds):
+            A_z[i, z_sl.start + i] = 1.0
+            b_z[i] = z_ubs[i]
+            A_z[m_bounds + i, z_sl.start + i] = -1.0
+            b_z[m_bounds + i] = -z_lbs[i]
+        self.constraints_A = np.vstack([self.constraints_A, A_z])
+        self.constraints_b = np.concatenate([self.constraints_b, b_z])
         return z_sl
 
     def _add_constraints_to_vars(self, sl: slice, A: Matrix, b: Vector) -> None:
@@ -555,7 +524,7 @@ def example_mlp_run() -> dict[str, Any]:
 
     # --- Pick activation envelope builder ---
     def gelu_builder(Li: float, Ui: float) -> Envelope:
-        """A builder for GELU using the generic sampled envelope."""
+        """A sound builder for GELU."""
         return tight_gelu_envelope(Li, Ui)
 
     # A builder for ReLU, if you wanted to swap

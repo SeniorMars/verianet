@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "verianet"
+version = "0.1.0"
+description = "Polyhedral abstract interpretation experiments for a tiny MNIST neural network."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+]
+
+[project.optional-dependencies]
+mnist = [
+    "tensorflow",
+]
+legacy = [
+    "pyomo",
+]
+plots = [
+    "matplotlib",
+]
+full = [
+    "tensorflow",
+    "pyomo",
+    "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+include = ["verianet*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+

@@ -3,17 +3,14 @@
 2. What the neuron's activation range is
 """
 
-import sys
-sys.path.append('..')
-
-from basic import *
-from helper import *
-from basic import tight_gelu_envelope
 import numpy as np
 from tensorflow.keras.datasets import mnist
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpecFromSubplotSpec
+
+from verianet.activations import gelu
+from verianet.paths import RESULTS_DIR, WEIGHTS_PATH, ensure_dir
 
 # Load data
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -21,7 +18,7 @@ x_train = tf.image.resize(x_train[..., tf.newaxis], [7, 7]).numpy().squeeze() / 
 x_test = tf.image.resize(x_test[..., tf.newaxis], [7, 7]).numpy().squeeze() / 255
 
 # Load weights
-data = np.load("../verysmallnn_weights.npz")
+data = np.load(WEIGHTS_PATH)
 W1, W2, W3 = data["W1"], data["W2"], data["W3"]
 b1, b2, b3 = data["b1"], data["b2"], data["b3"]
 
@@ -164,9 +161,11 @@ def analyze_neuron_on_real_data(layer, neuron_idx, n_samples=1000, show_plot=Tru
     ax.axis('off') if layer == 1 else None
 
     plt.tight_layout()
-    plt.savefig(f'neuron_L{layer}_N{neuron_idx}.png', dpi=150, bbox_inches='tight')
+    output_dir = ensure_dir(RESULTS_DIR / "simple_neuron_probe")
+    output_path = output_dir / f'neuron_L{layer}_N{neuron_idx}.png'
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
 
-    print(f"\nSaved: neuron_L{layer}_N{neuron_idx}.png")
+    print(f"\nSaved: {output_path}")
 
     return {
         'mean_activations': mean_activations,
